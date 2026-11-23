@@ -275,28 +275,3 @@ export function removeExtra(d: AppData, key: DateKey, exerciseId: string) {
   if (!entry.extras.length) delete entry.extras;
   entry.total = getDayExercises(d.sport, key).filter((e) => !e.optional).length;
 }
-
-function idea(name: string, p: Partial<Exercise>): Exercise {
-  return { ...newExercise(), id: `idea-${name}`, name, progressive: false, ...p };
-}
-
-/** Idées d'exercices à ajouter en plus (au poids du corps, sans matériel). */
-export const EXTRA_IDEAS: Exercise[] = [
-  idea('Gainage latéral', { kind: 'time', sets: 2, durationSec: 20, perSide: true, restSec: 30,
-    instructions: 'Sur un avant-bras, coude sous l’épaule, corps aligné. Monte le bassin et tiens, sans le laisser tomber.' }),
-  idea('Mountain climbers', { kind: 'time', sets: 3, durationSec: 30, restSec: 30,
-    instructions: 'En position de pompe, ramène un genou vers la poitrine puis l’autre, en alternance rapide. Dos plat.' }),
-  idea('Jumping jacks', { kind: 'time', sets: 3, durationSec: 30, restSec: 30,
-    instructions: 'Saute en écartant bras et jambes, puis reviens pieds joints. Atterris en douceur sur l’avant du pied.' }),
-  idea('Chaise contre le mur', { kind: 'time', sets: 2, durationSec: 30, restSec: 45,
-    instructions: 'Dos au mur, descends jusqu’à avoir les genoux à angle droit, au-dessus des chevilles. Tiens.' }),
-  idea('Crunchs', { kind: 'reps', sets: 3, reps: 15, restSec: 45,
-    instructions: 'Sur le dos, genoux pliés. Enroule le haut du dos en soufflant, sans tirer sur la nuque.' }),
-  idea('Burpees', { kind: 'reps', sets: 2, reps: 8, restSec: 60,
-    instructions: 'Accroupis, mains au sol, jette les pieds en arrière, reviens, puis saute bras en l’air. Version douce : sans saut.' }),
-  idea('Superman', { kind: 'reps', sets: 2, reps: 12, restSec: 45,
-    instructions: 'Allongé sur le ventre, bras tendus devant. Lève bras et jambes de quelques centimètres, tiens une seconde.' }),
-  idea('Dips adaptés', { kind: 'reps', sets: 2, reps: 8, restSec: 60,
-    instructions: 'Mains sur une chaise stable derrière toi, jambes fléchies. Descends jusqu’à 90° aux coudes au maximum, puis remonte.' }),
-];
-

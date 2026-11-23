@@ -54,6 +54,12 @@ export function addWater(d: AppData, key: DateKey, ml: number) {
   touch(d, key);
 }
 
+/** Fixe la quantité d'eau bue ce jour-là (ml). */
+export function setWater(d: AppData, key: DateKey, ml: number) {
+  d.nutrition.water.log[key] = Math.max(0, Math.round(ml));
+  touch(d, key);
+}
+
 export function toggleFaceStep(d: AppData, key: DateKey, stepId: ID, value?: boolean) {
   const entry = (d.face.log[key] ??= { done: [], note: '' });
   entry.done = toggleIn(entry.done, stepId, value);

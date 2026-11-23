@@ -35,7 +35,7 @@ import {
 } from './sportUtils';
 import { WorkoutEditor } from './WorkoutEditor';
 
-export type SportTab = 'today' | 'week' | 'library' | 'program' | 'history';
+export type SportTab = 'today' | 'week' | 'library' | 'ideas' | 'program' | 'history';
 
 export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportTab) => void }) {
   const data = useData();

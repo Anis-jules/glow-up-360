@@ -54,9 +54,35 @@ export function normalizeData(input: unknown): AppData {
   out.nutrition.water = { ...base.nutrition.water, ...(raw.nutrition?.water ?? {}) };
   if (!Array.isArray(out.sport.week) || out.sport.week.length !== 7) out.sport.week = base.sport.week;
   if (!Array.isArray(out.nutrition.plan) || out.nutrition.plan.length !== 7) out.nutrition.plan = base.nutrition.plan;
+  if (!Array.isArray(out.checklist)) out.checklist = base.checklist;
   if ((raw.version ?? 1) < 2) migrateToV2(out);
   if ((raw.version ?? 1) < 3) migrateToV3(out);
+  if ((raw.version ?? 1) < 4) migrateToV4(out);
   return out;
+}
+
+/**
+ * Version 4 : sur l'accueil, la liste « À faire aujourd'hui » prend la place du programme du jour
+ * (qui reste disponible, masqué, dans Personnaliser). Eau : objectif 3 L. Habitude minoxidil ajoutée.
+ * Planning : séance « Haut du corps » du lundi au samedi, dimanche repos.
+ */
+function migrateToV4(d: AppData) {
+  d.nutrition.water.goalMl = 3000;
+  // Ma séance du lundi au samedi, dimanche repos.
+  if (d.sport.workouts.some((w) => w.id === 'w-upper')) {
+    d.sport.week = ['w-upper', 'w-upper', 'w-upper', 'w-upper', 'w-upper', 'w-upper', null];
+  }
+  if (!d.habits.items.some((h) => h.id === 'h-minoxidil')) {
+    const h = defaultHabits().items.find((x) => x.id === 'h-minoxidil');
+    const at = d.habits.items.findIndex((x) => x.id === 'h-water');
+    if (h) d.habits.items.splice(at >= 0 ? at + 1 : 0, 0, h);
+  }
+  const without = d.settings.dashboardCards.filter((c) => c.id !== 'checklist');
+  const at = without.findIndex((c) => c.id === 'agenda');
+  const cards = without.filter((c) => c.id !== 'agenda');
+  cards.splice(at >= 0 ? at : 0, 0, { id: 'checklist', visible: true });
+  cards.push({ id: 'agenda', visible: false });
+  d.settings.dashboardCards = cards;
 }
 
 /**

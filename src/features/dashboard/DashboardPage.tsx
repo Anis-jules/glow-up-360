@@ -2,7 +2,6 @@ import {
   Bell,
   Brain,
   CalendarClock,
-  ChevronRight,
   Droplets,
   Dumbbell,
   Eye,
@@ -19,9 +18,11 @@ import {
   TrendingUp,
   Trophy,
 } from 'lucide-react';
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { ChecklistCard } from './ChecklistCard';
+import { DashCard } from './DashCard';
 import {
   BarChart,
   Button,
@@ -68,7 +69,8 @@ import type { DashboardCardId, Exercise, ModuleKey } from '@/lib/types';
 import { cx, moveItem } from '@/lib/utils';
 
 const CARD_LABELS: Record<DashboardCardId, string> = {
-  agenda: 'Programme du jour',
+  checklist: 'À faire aujourd’hui',
+  agenda: 'Programme du jour (rappels)',
   habits: 'Habitudes',
   sport: 'Sport du jour',
   nutrition: 'Nutrition',
@@ -131,6 +133,8 @@ export default function DashboardPage() {
   const renderCard = (id: DashboardCardId, delay: number) => {
     const props = { delay };
     switch (id) {
+      case 'checklist':
+        return <ChecklistCard key={id} {...props} />;
       case 'agenda':
         return <AgendaCard key={id} {...props} />;
       case 'habits':
@@ -279,43 +283,6 @@ export default function DashboardPage() {
 
 // ───────────────────────── Cartes
 
-function DashCard({
-  module,
-  title,
-  icon,
-  to,
-  meta,
-  children,
-  delay,
-  className,
-}: {
-  module?: ModuleKey;
-  title: string;
-  icon: ReactNode;
-  to: string;
-  meta?: ReactNode;
-  children: ReactNode;
-  delay: number;
-  className?: string;
-}) {
-  const navigate = useNavigate();
-  return (
-    <ModuleScope module={module} className={cx('min-w-0', className)}>
-      <Card className="h-full animate-rise" style={{ animationDelay: `${delay}ms` }}>
-        <button type="button" onClick={() => navigate(to)} className="group mb-3 flex w-full items-center gap-3 text-left">
-          <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-tint/12 text-tint [&_svg]:size-[18px]">{icon}</div>
-          <div className="min-w-0 flex-1">
-            <div className="font-display text-[16px] font-semibold">{title}</div>
-            {meta && <div className="truncate text-[13px] text-ink-3">{meta}</div>}
-          </div>
-          <ChevronRight className="size-4 text-ink-3 transition-transform group-hover:translate-x-0.5" />
-        </button>
-        {children}
-      </Card>
-    </ModuleScope>
-  );
-}
-
 function AgendaCard({ delay }: { delay: number }) {
   const data = useData();
   const today = useToday();
@@ -371,7 +338,9 @@ function HabitsCard({ delay }: { delay: number }) {
   const update = useUpdate();
   const today = useToday();
   const wd = weekdayOf(today);
-  const list = data.habits.items.filter((h) => !h.archived && h.days.includes(wd));
+  // Les habitudes déjà présentes dans « À faire aujourd'hui » n'apparaissent pas deux fois.
+  const inChecklist = new Set(data.checklist.flatMap((c) => (c.link.kind === 'habit' ? [c.link.habitId] : [])));
+  const list = data.habits.items.filter((h) => !h.archived && h.days.includes(wd) && !inChecklist.has(h.id));
   const done = new Set(data.habits.log[today] ?? []);
   const count = list.filter((h) => done.has(h.id)).length;
   const shown = list.slice(0, 6);

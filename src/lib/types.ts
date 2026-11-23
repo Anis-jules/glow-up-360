@@ -9,7 +9,7 @@ export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type ModuleKey = 'sport' | 'nutrition' | 'face' | 'mind' | 'habits';
 export type ThemeMode = 'light' | 'dark' | 'system';
-export type DashboardCardId = 'agenda' | 'habits' | 'sport' | 'nutrition' | 'face' | 'mind' | 'week';
+export type DashboardCardId = 'checklist' | 'agenda' | 'habits' | 'sport' | 'nutrition' | 'face' | 'mind' | 'week';
 
 // ───────────────────────── Réglages
 
@@ -382,6 +382,28 @@ export interface RemindersState {
   fired: Record<ID, string>;
 }
 
+// ───────────────────────── À faire aujourd'hui (accueil)
+
+/**
+ * Une ligne de la liste « À faire aujourd'hui ». Elle ne stocke pas sa propre coche : elle pointe
+ * vers ce qu'elle représente, pour que la même action soit cochée partout et compte une seule fois.
+ * - habit : une habitude (cochée aussi dans Habitudes) ; `owned` = créée depuis cette liste.
+ * - face : une étape de la routine visage (cochée aussi dans Visage).
+ * - water : l'objectif d'eau du jour, réparti en plusieurs cases.
+ */
+export type ChecklistLink =
+  | { kind: 'habit'; habitId: ID; owned?: boolean }
+  | { kind: 'face'; stepId: ID }
+  | { kind: 'water'; parts: string[] };
+
+export interface ChecklistItem {
+  id: ID;
+  /** Libellé affiché (pour une habitude, c'est le titre de l'habitude qui fait foi). */
+  label: string;
+  emoji: string;
+  link: ChecklistLink;
+}
+
 // ───────────────────────── Historique
 
 export interface DaySummary {
@@ -401,6 +423,8 @@ export interface AppData {
   mind: MindState;
   habits: HabitsState;
   reminders: RemindersState;
+  /** Liste « À faire aujourd'hui » de l'accueil. */
+  checklist: ChecklistItem[];
   /** Photographie de chaque journée (sert aux statistiques). */
   history: Record<DateKey, DaySummary>;
 }

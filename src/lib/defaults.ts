@@ -4,6 +4,7 @@
 import { todayKey } from './dates';
 import type {
   AppData,
+  ChecklistItem,
   Exercise,
   FaceState,
   FoodItem,
@@ -49,13 +50,15 @@ export function defaultSettings(): Settings {
     modulesInProgress: { sport: true, nutrition: true, face: true, mind: true, habits: true },
     jokersPerWeek: 1,
     dashboardCards: [
-      { id: 'agenda', visible: true },
+      { id: 'checklist', visible: true },
       { id: 'habits', visible: true },
       { id: 'sport', visible: true },
       { id: 'nutrition', visible: true },
       { id: 'face', visible: true },
       { id: 'mind', visible: true },
       { id: 'week', visible: true },
+      // Ancien « Programme du jour » (rappels par heure) : masqué, réactivable dans Personnaliser.
+      { id: 'agenda', visible: false },
     ],
     notificationsEnabled: false,
     inAppAlerts: true,
@@ -243,7 +246,8 @@ export function defaultSport(): SportState {
         ],
       },
     ],
-    week: ['w-upper', 'w-run', 'w-lower', 'w-active', 'w-full', 'w-run', 'w-rest'],
+    // Ma séance chaque jour du lundi au samedi, dimanche repos (les autres séances restent dans la bibliothèque).
+    week: ['w-upper', 'w-upper', 'w-upper', 'w-upper', 'w-upper', 'w-upper', null],
     progression: {
       enabled: true,
       startDate: todayKey(),
@@ -704,7 +708,7 @@ export function defaultNutrition(): NutritionState {
       { id: 'sh-9', name: 'Saumon ou maquereau', qty: '2 portions', category: 'Poissons et viandes', checked: false },
       { id: 'sh-10', name: 'Amandes et noix', qty: '1 sachet', category: 'Épicerie', checked: false },
     ],
-    water: { goalMl: 1500, glassMl: 250, log: {} },
+    water: { goalMl: 3000, glassMl: 250, log: {} },
     mealLog: {},
     principles: [
       'Manger varié, sans aliment interdit.',
@@ -837,6 +841,7 @@ export function defaultHabits(): HabitsState {
   return {
     items: [
       { id: 'h-water', title: 'Grand verre d’eau au réveil', emoji: '💧', days: ALL, moment: 'matin', note: '', archived: false },
+      { id: 'h-minoxidil', title: 'Minoxidil à mettre le matin', emoji: '💊', days: ALL, moment: 'matin', note: '', archived: false },
       { id: 'h-walk', title: 'Marcher 30 minutes', emoji: '🚶', days: ALL, moment: 'journee', note: 'Les trajets à pied comptent.', archived: false },
       { id: 'h-posture', title: 'Pause posture et étirements', emoji: '🧘', days: ALL, moment: 'journee', note: '', archived: false },
       { id: 'h-sport', title: 'Séance de sport', emoji: '🏋️', days: [0, 1, 2, 3, 4, 5], moment: 'soir', note: 'Ta séance du jour est dans l’onglet Sport.', archived: false },
@@ -874,13 +879,26 @@ export function defaultReminders(): RemindersState {
   };
 }
 
+// ───────────────────────── À faire aujourd'hui
+
+export function defaultChecklist(): ChecklistItem[] {
+  return [
+    { id: 'cl-minoxidil', label: 'Minoxidil à mettre le matin', emoji: '💊', link: { kind: 'habit', habitId: 'h-minoxidil', owned: true } },
+    { id: 'cl-creme-matin', label: 'Crème du matin', emoji: '🧴', link: { kind: 'face', stepId: 'fs-m-hydra' } },
+    { id: 'cl-eau', label: '3 L d’eau à répartir dans la journée', emoji: '💧', link: { kind: 'water', parts: ['Matin', 'Après-midi', 'Soir'] } },
+    { id: 'cl-creme-soir', label: 'Crème du soir visage et dos', emoji: '🧴', link: { kind: 'face', stepId: 'fs-e-hydra' } },
+  ];
+}
+
 // ───────────────────────── Ensemble
 
 /**
  * Version 2 (23/11/2026) : habitudes « Séance de sport » et « 5 mots en anglais » ajoutées, deux retirées.
  * Version 3 (23/11/2026) : séance « Haut du corps » = pompes basiques, gainage 1 min, pompes diamant, pompes épaules.
+ * Version 4 (23/11/2026) : liste « À faire aujourd'hui » sur l'accueil (remplace le programme du jour), eau 3 L, minoxidil,
+ * séance « Haut du corps » du lundi au samedi et dimanche repos.
  */
-export const DATA_VERSION = 3;
+export const DATA_VERSION = 4;
 
 export function createDefaultData(): AppData {
   return {
@@ -893,6 +911,7 @@ export function createDefaultData(): AppData {
     mind: defaultMind(),
     habits: defaultHabits(),
     reminders: defaultReminders(),
+    checklist: defaultChecklist(),
     history: {},
   };
 }

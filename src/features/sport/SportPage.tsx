@@ -1,4 +1,4 @@
-import { CalendarDays, Dumbbell, History, Library, Play, TrendingUp } from 'lucide-react';
+import { CalendarDays, Dumbbell, History, Library, Lightbulb, Play, TrendingUp } from 'lucide-react';
 import { ModuleScope, Tabs } from '@/components/ui';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { capitalize, formatLong, useToday } from '@/lib/dates';
@@ -6,12 +6,13 @@ import { useTab } from '@/lib/nav';
 import { getProgressionInfo } from '@/lib/progress';
 import { useData } from '@/lib/store';
 import { HistoryTab } from './HistoryTab';
+import { IdeasTab } from './IdeasTab';
 import { LibraryTab } from './LibraryTab';
 import { ProgramTab } from './ProgramTab';
 import { TodayTab, type SportTab } from './TodayTab';
 import { WeekTab } from './WeekTab';
 
-const TABS = ['today', 'week', 'library', 'program', 'history'] as const;
+const TABS = ['today', 'week', 'library', 'ideas', 'program', 'history'] as const;
 
 export default function SportPage() {
   const today = useToday();
@@ -39,6 +40,7 @@ export default function SportPage() {
           { id: 'today', label: 'Aujourd’hui', icon: <Play /> },
           { id: 'week', label: 'Semaine', icon: <CalendarDays /> },
           { id: 'library', label: 'Séances', icon: <Library />, count: data.sport.workouts.length },
+          { id: 'ideas', label: 'Idées', icon: <Lightbulb /> },
           { id: 'program', label: 'Programme 30 j', icon: <TrendingUp /> },
           { id: 'history', label: 'Historique', icon: <History /> },
         ]}
@@ -46,6 +48,7 @@ export default function SportPage() {
       {tab === 'today' && <TodayTab today={today} onGoTo={setTab} />}
       {tab === 'week' && <WeekTab today={today} />}
       {tab === 'library' && <LibraryTab />}
+      {tab === 'ideas' && <IdeasTab today={today} />}
       {tab === 'program' && <ProgramTab today={today} />}
       {tab === 'history' && <HistoryTab today={today} />}
     </ModuleScope>

@@ -6,7 +6,8 @@ import { getDayExercises } from '@/lib/progress';
 import { useData, useUpdate } from '@/lib/store';
 import type { DateKey, Exercise, Workout } from '@/lib/types';
 import { uid } from '@/lib/utils';
-import { addExtra, describeExercise, ensureLog, EXTRA_IDEAS, extrasRef, newExercise } from './sportUtils';
+import { IDEA_GROUPS } from './ideas';
+import { addExtra, describeExercise, ensureLog, extrasRef, newExercise } from './sportUtils';
 
 const norm = (s: string) => s.trim().toLowerCase();
 
@@ -44,7 +45,10 @@ export function AddExtraSheet({
       library.push(e);
     }
   }
-  const ideas = EXTRA_IDEAS.filter((e) => !todayNames.has(norm(e.name)) && !seen.has(norm(e.name)));
+  const ideaGroups = IDEA_GROUPS.map((g) => ({
+    ...g,
+    ideas: g.ideas.filter((e) => !todayNames.has(norm(e.name)) && !seen.has(norm(e.name))),
+  })).filter((g) => g.ideas.length > 0);
 
   const add = (source: Exercise) => {
     update((d) => {
@@ -133,18 +137,18 @@ export function AddExtraSheet({
           </div>
         )}
 
-        {ideas.length > 0 && (
-          <div>
+        {ideaGroups.map((g) => (
+          <div key={g.id}>
             <h3 className="mb-1 flex items-center gap-1.5 px-1 text-[13px] font-semibold tracking-wide text-ink-3 uppercase">
-              <Lightbulb className="size-3.5" /> Idées sans matériel
+              <Lightbulb className="size-3.5" /> {g.emoji} {g.title}
             </h3>
             <div className="-mx-1">
-              {ideas.map((ex) => (
+              {g.ideas.map((ex) => (
                 <Row key={ex.id} ex={ex} />
               ))}
             </div>
           </div>
-        )}
+        ))}
 
         <p className="text-xs leading-relaxed text-ink-3">
           Valeurs modifiables ensuite en touchant l’exercice. Ajoute à ton rythme : mieux vaut un exercice bien fait que trois bâclés.

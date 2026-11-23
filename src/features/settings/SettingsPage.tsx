@@ -49,7 +49,8 @@ const TABS = ['general', 'apparence', 'progression', 'donnees', 'apropos'] as co
 type Tab = (typeof TABS)[number];
 
 const CARD_LABELS: Record<DashboardCardId, string> = {
-  agenda: 'Programme du jour',
+  checklist: 'À faire aujourd’hui',
+  agenda: 'Programme du jour (rappels)',
   habits: 'Habitudes',
   sport: 'Sport du jour',
   nutrition: 'Nutrition',
