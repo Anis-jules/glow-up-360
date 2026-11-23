@@ -97,7 +97,7 @@ export function DayDetailSheet({ dayKey, onClose }: { dayKey: DateKey | null; on
               </div>
               {workout && (
                 <ul className="mt-1">
-                  {workout.exercises.map((e) => (
+                  {[...workout.exercises, ...(sportEntry?.extras ?? [])].map((e) => (
                     <Line key={e.id} done={!!sportEntry?.done.includes(e.id)}>
                       {e.name}
                       {e.optional ? ' (facultatif)' : ''}

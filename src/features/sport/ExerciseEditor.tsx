@@ -13,10 +13,10 @@ import {
 import { removeWithUndo } from '@/lib/feedback';
 import { useData, useUpdate } from '@/lib/store';
 import type { AppData, Exercise, ExerciseKind } from '@/lib/types';
-import { daysUsing, describeExercise, EXERCISE_KINDS } from './sportUtils';
+import { daysUsing, describeExercise, EXERCISE_KINDS, EXTRA_PREFIX, exerciseList, isExtrasRef, removeExtra } from './sportUtils';
 
-function findEx(d: AppData, workoutId: string, exerciseId: string): Exercise | undefined {
-  return d.sport.workouts.find((w) => w.id === workoutId)?.exercises.find((e) => e.id === exerciseId);
+function findEx(d: AppData, ref: string, exerciseId: string): Exercise | undefined {
+  return exerciseList(d, ref)?.find((e) => e.id === exerciseId);
 }
 
 /** Éditeur complet d'un exercice : chaque modification est enregistrée immédiatement. */
@@ -31,8 +31,10 @@ export function ExerciseEditor({
 }) {
   const data = useData();
   const update = useUpdate();
-  const workout = workoutId ? data.sport.workouts.find((w) => w.id === workoutId) : undefined;
-  const ex = workout && exerciseId ? workout.exercises.find((e) => e.id === exerciseId) : undefined;
+  // workoutId peut aussi désigner les exercices ajoutés d'une journée (« extra:AAAA-MM-JJ »).
+  const extra = isExtrasRef(workoutId);
+  const workout = workoutId && !extra ? data.sport.workouts.find((w) => w.id === workoutId) : undefined;
+  const ex = workoutId && exerciseId ? findEx(data, workoutId, exerciseId) : undefined;
   const open = !!ex;
 
   const set = <K extends keyof Exercise>(key: K, value: Exercise[K]) =>
@@ -61,6 +63,10 @@ export function ExerciseEditor({
                 const eId = ex.id;
                 onClose();
                 removeWithUndo(`« ${ex.name} » supprimé`, (d) => {
+                  if (isExtrasRef(wId)) {
+                    removeExtra(d, wId.slice(EXTRA_PREFIX.length), eId);
+                    return;
+                  }
                   const w = d.sport.workouts.find((x) => x.id === wId);
                   if (w) w.exercises = w.exercises.filter((x) => x.id !== eId);
                 });
@@ -75,9 +81,15 @@ export function ExerciseEditor({
         )
       }
     >
-      {ex && workout && (
+      {ex && (
         <div className="space-y-5">
-          {days.length > 1 && (
+          {extra && (
+            <div className="flex items-start gap-2.5 rounded-xl bg-tint/10 p-3 text-[13px] text-ink-2">
+              <CalendarDays className="mt-0.5 size-4 shrink-0 text-tint" />
+              <span>Exercice ajouté pour cette journée seulement : ta séance habituelle ne change pas.</span>
+            </div>
+          )}
+          {workout && days.length > 1 && (
             <div className="flex items-start gap-2.5 rounded-xl bg-tint/10 p-3 text-[13px] text-ink-2">
               <CalendarDays className="mt-0.5 size-4 shrink-0 text-tint" />
               <span>
@@ -181,13 +193,15 @@ export function ExerciseEditor({
               checked={ex.optional}
               onChange={(v) => set('optional', v)}
             />
-            <Toggle
-              className="py-3"
-              label="Suit le programme 30 jours"
-              description="Les valeurs augmentent selon la phase en cours."
-              checked={ex.progressive}
-              onChange={(v) => set('progressive', v)}
-            />
+            {!extra && (
+              <Toggle
+                className="py-3"
+                label="Suit le programme 30 jours"
+                description="Les valeurs augmentent selon la phase en cours."
+                checked={ex.progressive}
+                onChange={(v) => set('progressive', v)}
+              />
+            )}
           </div>
         </div>
       )}

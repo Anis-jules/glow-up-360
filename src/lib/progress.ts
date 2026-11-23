@@ -66,12 +66,24 @@ export function applyProgression(ex: Exercise, phase: ProgressionPhase | null): 
   return out;
 }
 
-/** Exercices de la séance du jour avec la progression appliquée. */
+/** Exercices ajoutés pour ce jour seulement. */
+export function getDayExtras(sport: SportState, key: DateKey): Exercise[] {
+  return sport.log[key]?.extras ?? [];
+}
+
+/** Exercices du jour : ceux de la séance, puis ceux ajoutés pour ce jour (valeurs de base). */
+export function getDayExercises(sport: SportState, key: DateKey): Exercise[] {
+  const w = getWorkoutForDate(sport, key);
+  if (!w) return [];
+  return [...w.exercises, ...getDayExtras(sport, key)];
+}
+
+/** Exercices du jour avec la progression appliquée (les exercices ajoutés gardent leurs valeurs). */
 export function getEffectiveExercises(sport: SportState, key: DateKey): Exercise[] {
   const w = getWorkoutForDate(sport, key);
   if (!w) return [];
   const { phase } = getProgressionInfo(sport, key);
-  return w.exercises.map((e) => applyProgression(e, phase));
+  return [...w.exercises.map((e) => applyProgression(e, phase)), ...getDayExtras(sport, key)];
 }
 
 // ───────────────────────── Progression quotidienne
@@ -93,7 +105,7 @@ export function moduleFractions(data: AppData, key: DateKey): ModuleFractions {
   // Sport
   const workout = getWorkoutForDate(data.sport, key);
   if (workout) {
-    const required = workout.exercises.filter((e) => !e.optional);
+    const required = getDayExercises(data.sport, key).filter((e) => !e.optional);
     if (required.length) {
       const done = new Set(data.sport.log[key]?.done ?? []);
       out.sport = required.filter((e) => done.has(e.id)).length / required.length;

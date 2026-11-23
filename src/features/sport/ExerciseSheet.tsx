@@ -7,7 +7,7 @@ import { applyProgression, getProgressionInfo } from '@/lib/progress';
 import { useData, useUpdate } from '@/lib/store';
 import type { DateKey } from '@/lib/types';
 import { ExerciseEditor } from './ExerciseEditor';
-import { buildTimerPhases, describeExercise, setExerciseDone } from './sportUtils';
+import { buildTimerPhases, describeExercise, exerciseList, isExtrasRef, setExerciseDone } from './sportUtils';
 
 /** Détail d'un exercice du jour : consignes, minuteur, notes, validation. */
 export function ExerciseSheet({
@@ -24,8 +24,9 @@ export function ExerciseSheet({
   const data = useData();
   const update = useUpdate();
   const [editing, setEditing] = useState(false);
-  const workout = workoutId ? data.sport.workouts.find((w) => w.id === workoutId) : undefined;
-  const base = workout?.exercises.find((e) => e.id === exerciseId);
+  // workoutId peut aussi désigner les exercices ajoutés d'une journée (« extra:AAAA-MM-JJ »).
+  const extra = isExtrasRef(workoutId);
+  const base = workoutId ? exerciseList(data, workoutId)?.find((e) => e.id === exerciseId) : undefined;
   const { phase } = getProgressionInfo(data.sport, dateKey);
   const ex = base ? applyProgression(base, phase) : undefined;
   const done = !!(exerciseId && data.sport.log[dateKey]?.done.includes(exerciseId));
@@ -80,6 +81,7 @@ export function ExerciseSheet({
                 <Chip>Repos {formatDuration(ex.restSec)} entre les séries</Chip>
               )}
               {ex.optional && <Chip>Facultatif</Chip>}
+              {extra && <Chip tone="tint">Ajouté pour aujourd’hui</Chip>}
             </div>
 
             {changed && phase && (
@@ -120,14 +122,14 @@ export function ExerciseSheet({
               </div>
             )}
 
-            <Field label="Mes notes" hint="Enregistrées sur l’exercice, visibles à chaque séance.">
+            <Field label="Mes notes" hint={extra ? 'Enregistrées pour cette journée.' : 'Enregistrées sur l’exercice, visibles à chaque séance.'}>
               <TextArea
                 value={base.notes}
                 minRows={2}
                 placeholder="Ressenti, variante, charge…"
                 onChange={(e) =>
                   update((d) => {
-                    const target = d.sport.workouts.find((w) => w.id === workoutId)?.exercises.find((x) => x.id === exerciseId);
+                    const target = workoutId ? exerciseList(d, workoutId)?.find((x) => x.id === exerciseId) : undefined;
                     if (target) target.notes = e.target.value;
                   })
                 }

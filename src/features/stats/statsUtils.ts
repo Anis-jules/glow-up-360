@@ -40,7 +40,7 @@ export function isSessionComplete(data: AppData, key: DateKey): boolean {
   if (!entry) return false;
   const w = data.sport.workouts.find((x) => x.id === entry.workoutId);
   if (w) {
-    const required = w.exercises.filter((e) => !e.optional).map((e) => e.id);
+    const required = [...w.exercises, ...(entry.extras ?? [])].filter((e) => !e.optional).map((e) => e.id);
     if (!required.length) return entry.done.length > 0;
     return required.every((id) => entry.done.includes(id));
   }

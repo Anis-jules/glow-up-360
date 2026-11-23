@@ -111,6 +111,8 @@ export interface SportLogEntry {
   /** Ressenti de 1 à 5. */
   feeling?: number;
   finishedAt?: string;
+  /** Exercices ajoutés pour cette journée seulement (ne modifient pas la séance). */
+  extras?: Exercise[];
 }
 
 export interface SportState {

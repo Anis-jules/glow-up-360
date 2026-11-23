@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { createDefaultData, DATA_VERSION, defaultHabits } from './defaults';
+import { createDefaultData, DATA_VERSION, defaultHabits, upperBodyExercises } from './defaults';
 import { todayKey } from './dates';
 import { computeDaySummary } from './progress';
 import type { AppData } from './types';
@@ -55,7 +55,27 @@ export function normalizeData(input: unknown): AppData {
   if (!Array.isArray(out.sport.week) || out.sport.week.length !== 7) out.sport.week = base.sport.week;
   if (!Array.isArray(out.nutrition.plan) || out.nutrition.plan.length !== 7) out.nutrition.plan = base.nutrition.plan;
   if ((raw.version ?? 1) < 2) migrateToV2(out);
+  if ((raw.version ?? 1) < 3) migrateToV3(out);
   return out;
+}
+
+/**
+ * Version 3 : la séance « Haut du corps » devient pompes basiques 3 × 10, gainage 2 × 1 min,
+ * pompes diamant 1 × 10 et pompes épaules 1 × 10. Les notes personnelles et les exercices ajoutés
+ * par l'utilisateur sont conservés ; seul le journal d'aujourd'hui est remis en cohérence.
+ */
+function migrateToV3(d: AppData) {
+  const w = d.sport.workouts.find((x) => x.id === 'w-upper');
+  if (!w) return;
+  const notes = new Map(w.exercises.map((e) => [e.id, e.notes]));
+  const own = w.exercises.filter((e) => !e.id.startsWith('w-upper-'));
+  w.exercises = [...upperBodyExercises().map((e) => ({ ...e, notes: notes.get(e.id) ?? '' })), ...own];
+  const entry = d.sport.log[todayKey()];
+  if (entry?.workoutId === 'w-upper') {
+    const ids = new Set([...w.exercises, ...(entry.extras ?? [])].map((e) => e.id));
+    entry.done = entry.done.filter((id) => ids.has(id));
+    entry.total = [...w.exercises, ...(entry.extras ?? [])].filter((e) => !e.optional).length;
+  }
 }
 
 /**

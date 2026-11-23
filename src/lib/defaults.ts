@@ -102,6 +102,30 @@ const TXT = {
   calme: 'Marche lente et respiration ample, puis étirements légers des mollets et des cuisses.',
 };
 
+/** Séance « Haut du corps » (lundi), version du 23/11/2026. */
+export function upperBodyExercises(): Exercise[] {
+  return [
+    ex('w-upper-pompes', 'Pompes basiques', { sets: 3, reps: 10, restSec: 60, instructions: TXT.pompes, progressive: true }),
+    ex('w-upper-gainage', 'Gainage', { kind: 'time', sets: 2, durationSec: 60, restSec: 45, instructions: TXT.gainage, progressive: true }),
+    ex('w-upper-diamant', 'Pompes diamant', {
+      sets: 1,
+      reps: 10,
+      restSec: 60,
+      progressive: true,
+      instructions:
+        'Mains rapprochées sous la poitrine, pouces et index qui se touchent pour dessiner un losange. Coudes le long du corps, descends lentement puis pousse. Travaille surtout les triceps. Plus facile : genoux au sol.',
+    }),
+    ex('w-upper-epaules', 'Pompes épaules', {
+      sets: 1,
+      reps: 10,
+      restSec: 60,
+      progressive: true,
+      instructions:
+        'Bassin haut, corps en V inversé, mains un peu plus larges que les épaules. Plie les coudes pour amener le haut de la tête vers le sol, entre les mains, puis pousse. Travaille surtout les épaules. Plus facile : genoux légèrement fléchis.',
+    }),
+  ];
+}
+
 function runWorkout(id: string): SportState['workouts'][number] {
   return {
     id,
@@ -135,26 +159,7 @@ export function defaultSport(): SportState {
         type: 'force',
         focus: 'Pectoraux, épaules, bras et gainage',
         notes: '',
-        exercises: [
-          ex('w-upper-pompes', 'Pompes', { sets: 3, reps: 8, restSec: 60, instructions: TXT.pompes, progressive: true }),
-          ex('w-upper-dips', 'Dips adaptés', {
-            sets: 2,
-            reps: 8,
-            restSec: 60,
-            progressive: true,
-            instructions:
-              'Mains sur le bord d’une chaise stable ou d’un banc, jambes fléchies. Descends en pliant les coudes jusqu’à 90° au maximum, sans douleur aux épaules, puis remonte.',
-          }),
-          ex('w-upper-gainage', 'Gainage', { kind: 'time', sets: 3, durationSec: 20, restSec: 45, instructions: TXT.gainage, progressive: true }),
-          ex('w-upper-superman', 'Superman', {
-            sets: 2,
-            reps: 12,
-            restSec: 45,
-            progressive: true,
-            instructions:
-              'Allongé sur le ventre, bras tendus devant toi. Lève doucement bras et jambes de quelques centimètres, tiens une seconde, redescends. Regard vers le sol.',
-          }),
-        ],
+        exercises: upperBodyExercises(),
       },
       runWorkout('w-run'),
       {
@@ -871,8 +876,11 @@ export function defaultReminders(): RemindersState {
 
 // ───────────────────────── Ensemble
 
-/** Version 2 (23/11/2026) : habitudes « Séance de sport » et « 5 mots en anglais » ajoutées, deux retirées. */
-export const DATA_VERSION = 2;
+/**
+ * Version 2 (23/11/2026) : habitudes « Séance de sport » et « 5 mots en anglais » ajoutées, deux retirées.
+ * Version 3 (23/11/2026) : séance « Haut du corps » = pompes basiques, gainage 1 min, pompes diamant, pompes épaules.
+ */
+export const DATA_VERSION = 3;
 
 export function createDefaultData(): AppData {
   return {

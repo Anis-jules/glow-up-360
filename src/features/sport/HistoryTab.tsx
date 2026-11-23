@@ -133,7 +133,7 @@ export function HistoryTab({ today }: { today: DateKey }) {
           <div className="space-y-5">
             {open.workout ? (
               <div className="-mx-2 divide-y divide-line">
-                {open.workout.exercises.map((e) => {
+                {[...open.workout.exercises, ...(open.entry.extras ?? [])].map((e) => {
                   const eff = applyProgression(e, openPhase);
                   return (
                     <CheckRow

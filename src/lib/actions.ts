@@ -2,7 +2,7 @@
 // À appeler à l'intérieur d'un update((d) => …).
 
 import { todayKey } from './dates';
-import { getWorkoutForDate, snapshotDay } from './progress';
+import { getDayExercises, getWorkoutForDate, snapshotDay } from './progress';
 import type { AppData, DateKey, ID } from './types';
 
 function touch(d: AppData, key: DateKey) {
@@ -25,7 +25,8 @@ export function toggleHabit(d: AppData, key: DateKey, habitId: ID, value?: boole
 export function toggleExercise(d: AppData, key: DateKey, exerciseId: ID, value?: boolean) {
   const workout = getWorkoutForDate(d.sport, key);
   if (!workout) return;
-  const required = workout.exercises.filter((e) => !e.optional).length;
+  const requiredIds = getDayExercises(d.sport, key).filter((e) => !e.optional).map((e) => e.id);
+  const required = requiredIds.length;
   const entry = (d.sport.log[key] ??= {
     workoutId: workout.id,
     workoutTitle: workout.title,
@@ -36,7 +37,6 @@ export function toggleExercise(d: AppData, key: DateKey, exerciseId: ID, value?:
   entry.total = required;
   entry.workoutTitle = workout.title;
   entry.done = toggleIn(entry.done, exerciseId, value);
-  const requiredIds = workout.exercises.filter((e) => !e.optional).map((e) => e.id);
   if (requiredIds.length && requiredIds.every((id) => entry.done.includes(id))) entry.finishedAt ??= new Date().toISOString();
   else delete entry.finishedAt;
   touch(d, key);

@@ -1,4 +1,4 @@
-import { ArrowRightLeft, CalendarDays, ChevronRight, Info, Pencil, RotateCcw, Sofa, Trophy } from 'lucide-react';
+import { ArrowRightLeft, CalendarDays, ChevronRight, Info, Pencil, Plus, RotateCcw, Sofa, Trophy, X } from 'lucide-react';
 import { useState } from 'react';
 import {
   Button,
@@ -14,16 +14,20 @@ import {
   TextArea,
 } from '@/components/ui';
 import { addDays, WEEKDAYS, weekdayOf } from '@/lib/dates';
-import { confirm } from '@/lib/feedback';
+import { confirm, removeWithUndo } from '@/lib/feedback';
 import { applyProgression, getProgressionInfo, getWorkoutForDate } from '@/lib/progress';
 import { useData, useUpdate } from '@/lib/store';
 import type { DateKey } from '@/lib/types';
 import { cx } from '@/lib/utils';
+import { AddExtraSheet } from './AddExtraSheet';
+import { ExerciseEditor } from './ExerciseEditor';
 import { ExerciseSheet } from './ExerciseSheet';
 import {
   describeExercise,
   ensureLog,
   estimateWorkoutSec,
+  extrasRef,
+  removeExtra,
   FEELING_LABELS,
   formatEstimate,
   setExerciseDone,
@@ -37,7 +41,9 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
   const data = useData();
   const update = useUpdate();
   const sport = data.sport;
-  const [openEx, setOpenEx] = useState<string | null>(null);
+  const [openEx, setOpenEx] = useState<{ ref: string; id: string } | null>(null);
+  const [editEx, setEditEx] = useState<{ ref: string; id: string } | null>(null);
+  const [adding, setAdding] = useState(false);
   const [choosing, setChoosing] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<string | null>(null);
 
@@ -46,7 +52,10 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
   const entry = sport.log[today];
   const overridden = !!entry && entry.workoutId !== plannedId;
   const info = getProgressionInfo(sport, today);
-  const exercises = workout ? workout.exercises.map((e) => applyProgression(e, info.phase)) : [];
+  const extras = entry?.extras ?? [];
+  const extraIds = new Set(extras.map((e) => e.id));
+  const exercises = workout ? [...workout.exercises.map((e) => applyProgression(e, info.phase)), ...extras] : [];
+  const refOf = (id: string) => (extraIds.has(id) ? extrasRef(today) : workout?.id ?? '');
   const done = new Set(entry?.done ?? []);
   const required = exercises.filter((e) => !e.optional);
   const doneRequired = required.filter((e) => done.has(e.id)).length;
@@ -58,7 +67,8 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
     const w = sport.workouts.find((x) => x.id === id);
     if (!w) return;
     update((d) => {
-      if (id === plannedId) {
+      const kept = d.sport.log[today]?.extras;
+      if (id === plannedId && !kept?.length) {
         delete d.sport.log[today];
         return;
       }
@@ -66,8 +76,9 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
         workoutId: w.id,
         workoutTitle: w.title,
         done: [],
-        total: w.exercises.filter((e) => !e.optional).length,
+        total: [...w.exercises, ...(kept ?? [])].filter((e) => !e.optional).length,
         note: d.sport.log[today]?.note ?? '',
+        ...(kept?.length ? { extras: kept } : {}),
       };
     });
     setChoosing(false);
@@ -83,6 +94,20 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
       if (!ok) return;
     }
     update((d) => {
+      const kept = d.sport.log[today]?.extras;
+      const planned = plannedId ? d.sport.workouts.find((x) => x.id === plannedId) : undefined;
+      if (kept?.length && planned) {
+        // Les exercices ajoutés aujourd'hui suivent la séance du planning.
+        d.sport.log[today] = {
+          workoutId: planned.id,
+          workoutTitle: planned.title,
+          done: [],
+          total: [...planned.exercises, ...kept].filter((e) => !e.optional).length,
+          note: d.sport.log[today]?.note ?? '',
+          extras: kept,
+        };
+        return;
+      }
       delete d.sport.log[today];
     });
   };
@@ -211,9 +236,9 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
                     key={ex.id}
                     checked={done.has(ex.id)}
                     onToggle={(v) => update((d) => setExerciseDone(d, today, ex.id, v))}
-                    onOpen={() => setOpenEx(ex.id)}
+                    onOpen={() => setOpenEx({ ref: refOf(ex.id), id: ex.id })}
                     title={ex.name}
-                    subtitle={describeExercise(ex)}
+                    subtitle={extraIds.has(ex.id) ? `En plus aujourd’hui · ${describeExercise(ex)}` : describeExercise(ex)}
                     muted={ex.optional}
                     leading={
                       <span className="grid size-6 shrink-0 place-items-center rounded-md bg-ink/[0.05] text-[11px] font-semibold text-ink-3 tabular max-sm:hidden">
@@ -221,19 +246,39 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
                       </span>
                     }
                     trailing={
-                      <button
-                        type="button"
-                        aria-label={`Détail de ${ex.name}`}
-                        onClick={() => setOpenEx(ex.id)}
-                        className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-3 hover:bg-ink/[0.05] hover:text-ink"
-                      >
-                        <ChevronRight className="size-4" />
-                      </button>
+                      <>
+                        {extraIds.has(ex.id) && (
+                          <button
+                            type="button"
+                            aria-label={`Retirer ${ex.name} de la journée`}
+                            title="Retirer de la journée"
+                            onClick={() => removeWithUndo(`« ${ex.name} » retiré de la journée`, (d) => removeExtra(d, today, ex.id))}
+                            className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-3 hover:bg-danger/10 hover:text-danger"
+                          >
+                            <X className="size-4" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          aria-label={`Détail de ${ex.name}`}
+                          onClick={() => setOpenEx({ ref: refOf(ex.id), id: ex.id })}
+                          className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-3 hover:bg-ink/[0.05] hover:text-ink"
+                        >
+                          <ChevronRight className="size-4" />
+                        </button>
+                      </>
                     }
                   />
                 ))}
               </div>
             )}
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-tint/40 py-3 text-[14px] font-medium text-tint transition-colors hover:bg-tint/8"
+            >
+              <Plus className="size-4" /> Ajouter un exercice en plus aujourd’hui
+            </button>
             {workout.notes && (
               <p className="mt-3 flex items-start gap-2 rounded-xl bg-surface-2 p-3 text-[13px] text-ink-2">
                 <Info className="mt-0.5 size-4 shrink-0 text-ink-3" />
@@ -307,7 +352,17 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
         </div>
       </Sheet>
 
-      <ExerciseSheet workoutId={workout?.id ?? null} exerciseId={openEx} dateKey={today} onClose={() => setOpenEx(null)} />
+      <ExerciseSheet workoutId={openEx?.ref ?? null} exerciseId={openEx?.id ?? null} dateKey={today} onClose={() => setOpenEx(null)} />
+      <ExerciseEditor workoutId={editEx?.ref ?? null} exerciseId={editEx?.id ?? null} onClose={() => setEditEx(null)} />
+      {workout && (
+        <AddExtraSheet
+          open={adding}
+          onClose={() => setAdding(false)}
+          today={today}
+          workout={workout}
+          onEdit={(ref, id) => setEditEx({ ref, id })}
+        />
+      )}
       <WorkoutEditor workoutId={editingWorkout} onClose={() => setEditingWorkout(null)} />
     </div>
   );

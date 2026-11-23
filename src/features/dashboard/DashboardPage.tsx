@@ -54,6 +54,7 @@ import { MODULE_ROUTES } from '@/lib/nav';
 import {
   computeDaySummary,
   computeStreaks,
+  getDayExercises,
   getDaySummary,
   getEffectiveExercises,
   getProgressionInfo,
@@ -593,9 +594,12 @@ function WeekCard({ delay }: { delay: number }) {
   const past = summaries.filter((s): s is NonNullable<typeof s> => s !== null);
   const avg = past.length ? Math.round(past.reduce((a, s) => a + s.pct, 0) / past.length) : 0;
   const successes = past.filter((s) => s.pct >= data.settings.completionThreshold).length;
+  // Séance complète : tous les exercices obligatoires du jour (séance + ajouts) validés.
   const sessions = days.filter((k) => {
     const e = data.sport.log[k];
-    return e && e.total > 0 && e.done.length >= e.total;
+    if (!e) return false;
+    const required = getDayExercises(data.sport, k).filter((x) => !x.optional);
+    return required.length > 0 && required.every((x) => e.done.includes(x.id));
   }).length;
 
   return (
