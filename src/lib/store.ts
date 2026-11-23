@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { createDefaultData, DATA_VERSION } from './defaults';
+import { createDefaultData, DATA_VERSION, defaultHabits } from './defaults';
 import { todayKey } from './dates';
 import { computeDaySummary } from './progress';
 import type { AppData } from './types';
@@ -54,7 +54,25 @@ export function normalizeData(input: unknown): AppData {
   out.nutrition.water = { ...base.nutrition.water, ...(raw.nutrition?.water ?? {}) };
   if (!Array.isArray(out.sport.week) || out.sport.week.length !== 7) out.sport.week = base.sport.week;
   if (!Array.isArray(out.nutrition.plan) || out.nutrition.plan.length !== 7) out.nutrition.plan = base.nutrition.plan;
+  if ((raw.version ?? 1) < 2) migrateToV2(out);
   return out;
+}
+
+/**
+ * Version 2 : retire « Au lit avant 23 h » et « Noter 3 choses positives », ajoute « Séance de sport »
+ * et « Ajouter 5 mots en anglais avec traduction ». L'historique des jours passés n'est pas modifié.
+ */
+function migrateToV2(d: AppData) {
+  d.habits.items = d.habits.items.filter((h) => h.id !== 'h-sleep' && h.id !== 'h-gratitude');
+  const defaults = defaultHabits().items;
+  for (const id of ['h-sport', 'h-english']) {
+    if (d.habits.items.some((h) => h.id === id)) continue;
+    const pos = defaults.findIndex((h) => h.id === id);
+    // Placer la nouvelle habitude juste après celle qui la précède dans le programme d'origine.
+    const prevId = defaults[pos - 1]?.id;
+    const at = d.habits.items.findIndex((h) => h.id === prevId);
+    d.habits.items.splice(at >= 0 ? at + 1 : d.habits.items.length, 0, defaults[pos]);
+  }
 }
 
 /** Vérifie qu'un objet ressemble à une sauvegarde Glow Up 360°. */

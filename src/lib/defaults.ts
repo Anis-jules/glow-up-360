@@ -834,9 +834,9 @@ export function defaultHabits(): HabitsState {
       { id: 'h-water', title: 'Grand verre d’eau au réveil', emoji: '💧', days: ALL, moment: 'matin', note: '', archived: false },
       { id: 'h-walk', title: 'Marcher 30 minutes', emoji: '🚶', days: ALL, moment: 'journee', note: 'Les trajets à pied comptent.', archived: false },
       { id: 'h-posture', title: 'Pause posture et étirements', emoji: '🧘', days: ALL, moment: 'journee', note: '', archived: false },
+      { id: 'h-sport', title: 'Séance de sport', emoji: '🏋️', days: [0, 1, 2, 3, 4, 5], moment: 'soir', note: 'Ta séance du jour est dans l’onglet Sport.', archived: false },
       { id: 'h-screens', title: 'Pas d’écran 30 min avant de dormir', emoji: '📵', days: ALL, moment: 'soir', note: '', archived: false },
-      { id: 'h-gratitude', title: 'Noter 3 choses positives', emoji: '✨', days: ALL, moment: 'soir', note: '', archived: false },
-      { id: 'h-sleep', title: 'Au lit avant 23 h', emoji: '🌙', days: ALL, moment: 'soir', note: '', archived: false },
+      { id: 'h-english', title: 'Ajouter 5 mots en anglais avec traduction', emoji: '🇬🇧', days: ALL, moment: 'libre', note: 'Tu peux les noter dans Esprit, onglet Journal, catégorie Langues étrangères.', archived: false },
       { id: 'h-plan', title: 'Préparer la semaine', emoji: '🗓️', days: [6], moment: 'libre', note: '', archived: false },
     ],
     log: {},
@@ -871,7 +871,8 @@ export function defaultReminders(): RemindersState {
 
 // ───────────────────────── Ensemble
 
-export const DATA_VERSION = 1;
+/** Version 2 (23/11/2026) : habitudes « Séance de sport » et « 5 mots en anglais » ajoutées, deux retirées. */
+export const DATA_VERSION = 2;
 
 export function createDefaultData(): AppData {
   return {
