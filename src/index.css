@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Jetons de couleur. Les valeurs vivent dans des variables CSS pour que l'utilisateur
+ * puisse changer l'accent et la couleur de chaque rubrique (appliquées par ThemeSync).
+ * `--tint` est la couleur de la rubrique courante : un composant la reçoit de son parent.
+ */
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Plus Jakarta Sans Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-tint: var(--tint);
+  --color-tint-ink: var(--tint-ink);
+  --color-sport: var(--c-sport);
+  --color-nutrition: var(--c-nutrition);
+  --color-face: var(--c-face);
+  --color-mind: var(--c-mind);
+  --color-habits: var(--c-habits);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+
+  --animate-fade-in: fade-in 0.28s ease-out both;
+  --animate-rise: rise 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-sheet-up: sheet-up 0.34s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  --animate-pop-in: pop-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  --animate-check: check 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+:root {
+  --bg: #f6f5f2;
+  --surface: #ffffff;
+  --surface-2: #f0efeb;
+  --line: rgb(24 24 32 / 0.08);
+  --ink: #16161b;
+  --ink-2: #5d5d68;
+  --ink-3: #8f8f99;
+  --accent: #6d5dfc;
+  --accent-ink: #ffffff;
+  --tint: var(--accent);
+  --tint-ink: #ffffff;
+  --c-sport: #ff7a45;
+  --c-nutrition: #1fae7a;
+  --c-face: #ec5f9c;
+  --c-mind: #3b82f6;
+  --c-habits: #f2a93b;
+  --success: #16a36a;
+  --danger: #e5484d;
+  --shadow-card: 0 1px 2px rgb(16 16 24 / 0.04), 0 8px 24px -12px rgb(16 16 24 / 0.08);
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0b0b0f;
+  --surface: #15151b;
+  --surface-2: #1e1e26;
+  --line: rgb(255 255 255 / 0.075);
+  --ink: #f2f2f5;
+  --ink-2: #a5a5b0;
+  --ink-3: #6f6f7a;
+  --success: #34d399;
+  --danger: #ff6b6f;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+    /* Un mot très long saisi par l'utilisateur passe à la ligne au lieu de déborder. */
+    overflow-wrap: break-word;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--accent) 30%, transparent);
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--tint) 60%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-surface;
+    box-shadow: var(--shadow-card);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+}
+@keyframes check {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

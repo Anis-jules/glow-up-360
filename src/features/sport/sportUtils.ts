@@ -1,0 +1,234 @@
+// Outils de la rubrique Sport : libellés, durées estimées, minuteurs, journal du jour.
+
+import type { TimerPhase } from '@/components/ui';
+import { formatDuration, todayKey, WEEKDAYS_SHORT, weekdayOf } from '@/lib/dates';
+import { getWorkoutForDate } from '@/lib/progress';
+import type { AppData, DateKey, Exercise, ExerciseKind, SportLogEntry, SportState, Workout, WorkoutType } from '@/lib/types';
+import { uid } from '@/lib/utils';
+
+export const WORKOUT_TYPES: { value: WorkoutType; label: string }[] = [
+  { value: 'force', label: 'Renforcement' },
+  { value: 'cardio', label: 'Cardio' },
+  { value: 'mobilite', label: 'Mobilité' },
+  { value: 'repos', label: 'Récupération' },
+  { value: 'perso', label: 'Personnalisée' },
+];
+
+export const WORKOUT_TYPE_LABEL: Record<WorkoutType, string> = Object.fromEntries(
+  WORKOUT_TYPES.map((t) => [t.value, t.label]),
+) as Record<WorkoutType, string>;
+
+export const EXERCISE_KINDS: { value: ExerciseKind; label: string; hint: string }[] = [
+  { value: 'reps', label: 'Répétitions', hint: 'Séries × répétitions' },
+  { value: 'time', label: 'Durée', hint: 'Séries × durée' },
+  { value: 'interval', label: 'Fractionné', hint: 'Effort et récupération répétés' },
+  { value: 'free', label: 'Libre', hint: 'Activité sans comptage' },
+];
+
+/** Résumé lisible : « 3 × 10 · repos 60 s », « 8 × (Course 1 min + Marche 2 min) ». */
+export function describeExercise(ex: Exercise, withRest = true): string {
+  let main = '';
+  switch (ex.kind) {
+    case 'reps':
+      main = ex.sets > 1 ? `${ex.sets} × ${ex.reps}` : `${ex.reps} répétitions`;
+      if (ex.perSide) main += ' par côté';
+      break;
+    case 'time':
+      main = ex.sets > 1 ? `${ex.sets} × ${formatDuration(ex.durationSec)}` : formatDuration(ex.durationSec);
+      if (ex.perSide) main += ' par côté';
+      break;
+    case 'interval':
+      main = `${ex.sets} × (${ex.workLabel || 'Effort'} ${formatDuration(ex.workSec)} + ${ex.recoverLabel || 'Récupération'} ${formatDuration(ex.recoverSec)})`;
+      break;
+    case 'free':
+      main = ex.durationSec > 0 ? `Environ ${formatDuration(ex.durationSec)}` : 'À ton rythme';
+      break;
+  }
+  const parts = [main];
+  if (withRest && ex.restSec > 0 && ex.kind !== 'interval' && ex.kind !== 'free' && ex.sets > 1) {
+    parts.push(`repos ${formatDuration(ex.restSec)}`);
+  }
+  if (ex.optional) parts.push('Facultatif');
+  return parts.join(' · ');
+}
+
+/** Durée estimée d'un exercice en secondes (repos compris). */
+export function estimateExerciseSec(ex: Exercise): number {
+  const sides = ex.perSide ? 2 : 1;
+  switch (ex.kind) {
+    case 'reps':
+      return ex.sets * ex.reps * 3 * sides + Math.max(0, ex.sets - 1) * ex.restSec;
+    case 'time':
+      return ex.sets * ex.durationSec * sides + Math.max(0, ex.sets - 1) * ex.restSec;
+    case 'interval':
+      return ex.sets * (ex.workSec + ex.recoverSec);
+    case 'free':
+      return ex.durationSec;
+  }
+}
+
+export function estimateWorkoutSec(exercises: Exercise[], includeOptional = false): number {
+  return exercises.filter((e) => includeOptional || !e.optional).reduce((acc, e) => acc + estimateExerciseSec(e), 0);
+}
+
+/** « 25 min » arrondi à la minute (5 min minimum si quelque chose est prévu). */
+export function formatEstimate(sec: number): string {
+  if (sec <= 0) return 'Durée libre';
+  const min = Math.max(5, Math.round(sec / 60 / 5) * 5);
+  return `≈ ${min} min`;
+}
+
+/** Étapes de minuteur selon le type d'exercice. */
+export function buildTimerPhases(ex: Exercise): { phases: TimerPhase[]; title: string } {
+  const sides = ex.perSide ? ['côté gauche', 'côté droit'] : [''];
+  switch (ex.kind) {
+    case 'time': {
+      const phases: TimerPhase[] = [];
+      for (let s = 1; s <= Math.max(1, ex.sets); s++) {
+        for (const side of sides) {
+          phases.push({
+            label: `Série ${s}${ex.sets > 1 ? `/${ex.sets}` : ''}${side ? ` · ${side}` : ''}`,
+            seconds: Math.max(1, ex.durationSec),
+            tone: 'work',
+          });
+        }
+        if (s < ex.sets && ex.restSec > 0) phases.push({ label: 'Repos', seconds: ex.restSec, tone: 'rest' });
+      }
+      return { phases, title: 'Minuteur des séries' };
+    }
+    case 'interval': {
+      const phases: TimerPhase[] = [];
+      for (let r = 1; r <= Math.max(1, ex.sets); r++) {
+        phases.push({ label: `${ex.workLabel || 'Effort'} ${r}/${ex.sets}`, seconds: Math.max(1, ex.workSec), tone: 'work' });
+        if (ex.recoverSec > 0) phases.push({ label: `${ex.recoverLabel || 'Récupération'} ${r}/${ex.sets}`, seconds: ex.recoverSec, tone: 'rest' });
+      }
+      return { phases, title: 'Minuteur du fractionné' };
+    }
+    case 'free':
+      return ex.durationSec > 0
+        ? { phases: [{ label: ex.name, seconds: ex.durationSec, tone: 'neutral' }], title: 'Minuteur' }
+        : { phases: [], title: '' };
+    case 'reps': {
+      if (ex.restSec <= 0 || ex.sets <= 1) return { phases: [], title: '' };
+      const phases: TimerPhase[] = [];
+      for (let s = 1; s < ex.sets; s++) {
+        phases.push({ label: `Repos après la série ${s}`, seconds: ex.restSec, tone: 'rest' });
+      }
+      return { phases, title: 'Minuteur de repos entre les séries' };
+    }
+  }
+}
+
+/** Jours où une séance est prévue dans le planning : « Mar, Sam ». */
+export function daysUsing(sport: SportState, workoutId: string): string[] {
+  const out: string[] = [];
+  sport.week.forEach((id, i) => {
+    if (id === workoutId) out.push(WEEKDAYS_SHORT[i]);
+  });
+  return out;
+}
+
+/** Crée (si besoin) l'entrée du journal de ce jour et la renvoie (à utiliser dans un update). */
+export function ensureLog(d: AppData, key: DateKey): SportLogEntry | null {
+  const existing = d.sport.log[key];
+  const workout = getWorkoutForDate(d.sport, key);
+  if (!workout) return existing ?? null;
+  const total = workout.exercises.filter((e) => !e.optional).length;
+  if (existing) {
+    existing.workoutTitle = workout.title;
+    existing.total = total;
+    return existing;
+  }
+  const entry: SportLogEntry = { workoutId: workout.id, workoutTitle: workout.title, done: [], total, note: '' };
+  d.sport.log[key] = entry;
+  return entry;
+}
+
+/** Coche / décoche un exercice pour ce jour. */
+export function setExerciseDone(d: AppData, key: DateKey, exerciseId: string, done: boolean) {
+  const entry = ensureLog(d, key);
+  if (!entry) return;
+  const set = new Set(entry.done);
+  if (done) set.add(exerciseId);
+  else set.delete(exerciseId);
+  entry.done = [...set];
+  const workout = getWorkoutForDate(d.sport, key);
+  const required = workout?.exercises.filter((e) => !e.optional) ?? [];
+  const complete = required.length > 0 && required.every((e) => set.has(e.id));
+  if (complete && !entry.finishedAt) entry.finishedAt = new Date().toISOString();
+  if (!complete) delete entry.finishedAt;
+}
+
+/** Séance complète : tous les exercices obligatoires validés. */
+export function isComplete(entry: SportLogEntry | undefined, workout?: Workout | null): boolean {
+  if (!entry) return false;
+  if (workout && workout.id === entry.workoutId) {
+    const required = workout.exercises.filter((e) => !e.optional);
+    if (required.length === 0) return false;
+    const done = new Set(entry.done);
+    return required.every((e) => done.has(e.id));
+  }
+  return entry.total > 0 && entry.done.length >= entry.total;
+}
+
+export function newExercise(): Exercise {
+  return {
+    id: uid('e'),
+    name: 'Nouvel exercice',
+    kind: 'reps',
+    sets: 3,
+    reps: 10,
+    perSide: false,
+    durationSec: 30,
+    workSec: 60,
+    recoverSec: 60,
+    workLabel: 'Effort',
+    recoverLabel: 'Récupération',
+    restSec: 60,
+    instructions: '',
+    notes: '',
+    optional: false,
+    progressive: true,
+  };
+}
+
+export function newWorkout(): Workout {
+  return {
+    id: uid('w'),
+    title: 'Nouvelle séance',
+    type: 'perso',
+    focus: '',
+    notes: '',
+    exercises: [],
+  };
+}
+
+/** Copie d'une séance avec de nouveaux identifiants. */
+export function duplicateWorkout(w: Workout): Workout {
+  return {
+    ...w,
+    id: uid('w'),
+    title: `${w.title} (copie)`,
+    exercises: w.exercises.map((e) => ({ ...e, id: uid('e') })),
+  };
+}
+
+export const FEELING_LABELS = ['Très difficile', 'Difficile', 'Correct', 'Bien', 'Excellent'];
+
+/**
+ * Assigne une séance à un jour du planning (à utiliser dans un update).
+ * Si la séance du jour même n'a pas été commencée, l'entrée du journal est retirée pour suivre le nouveau planning.
+ * Renvoie false si une séance commencée aujourd'hui a été conservée.
+ */
+export function assignDay(d: AppData, weekday: number, workoutId: string | null, today: DateKey = todayKey()): boolean {
+  const previous = d.sport.week[weekday] ?? null;
+  d.sport.week[weekday] = workoutId;
+  if (weekdayOf(today) !== weekday) return true;
+  const entry = d.sport.log[today];
+  if (!entry || entry.workoutId !== previous) return true;
+  if (entry.done.length === 0) {
+    delete d.sport.log[today];
+    return true;
+  }
+  return false;
+}

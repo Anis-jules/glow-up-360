@@ -1,0 +1,889 @@
+// Programme initial de Glow Up 360°.
+// Les identifiants sont fixes : réinitialiser une rubrique retrouve les mêmes repères dans l'historique.
+
+import { todayKey } from './dates';
+import type {
+  AppData,
+  Exercise,
+  FaceState,
+  FoodItem,
+  HabitsState,
+  MindState,
+  NutritionState,
+  PlannedMeal,
+  RemindersState,
+  Settings,
+  SportState,
+  Weekday,
+} from './types';
+
+const ALL: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
+
+// ───────────────────────── Réglages
+
+export function defaultSettings(): Settings {
+  return {
+    name: '',
+    theme: 'system',
+    accent: '#6d5dfc',
+    moduleColors: {
+      sport: '#ff7a45',
+      nutrition: '#1fae7a',
+      face: '#ec5f9c',
+      mind: '#3b82f6',
+      habits: '#f2a93b',
+    },
+    motivations: [
+      'Chaque petit geste compte, {name}. Aujourd’hui, on avance d’un pas.',
+      'Pas besoin d’être parfait, juste régulier.',
+      'Ton futur toi te remerciera pour ce que tu fais aujourd’hui.',
+      'Une séance, un verre d’eau, une page lue : c’est comme ça qu’on construit.',
+      'La constance bat l’intensité.',
+      'Prends soin de toi comme de quelqu’un que tu aimes, {name}.',
+      'Une journée à moitié réussie reste une journée qui compte.',
+      'Le progrès, c’est mieux qu’hier. Pas parfait.',
+      'Respire. Concentre-toi seulement sur la prochaine action.',
+      'Tu n’as pas à tout faire, seulement à commencer.',
+    ],
+    completionThreshold: 80,
+    modulesInProgress: { sport: true, nutrition: true, face: true, mind: true, habits: true },
+    jokersPerWeek: 1,
+    dashboardCards: [
+      { id: 'agenda', visible: true },
+      { id: 'habits', visible: true },
+      { id: 'sport', visible: true },
+      { id: 'nutrition', visible: true },
+      { id: 'face', visible: true },
+      { id: 'mind', visible: true },
+      { id: 'week', visible: true },
+    ],
+    notificationsEnabled: false,
+    inAppAlerts: true,
+    sounds: true,
+  };
+}
+
+// ───────────────────────── Sport
+
+function ex(id: string, name: string, p: Partial<Exercise>): Exercise {
+  return {
+    id,
+    name,
+    kind: 'reps',
+    sets: 1,
+    reps: 0,
+    perSide: false,
+    durationSec: 0,
+    workSec: 0,
+    recoverSec: 0,
+    workLabel: 'Effort',
+    recoverLabel: 'Récupération',
+    restSec: 0,
+    instructions: '',
+    notes: '',
+    optional: false,
+    progressive: false,
+    ...p,
+  };
+}
+
+const TXT = {
+  pompes:
+    'Mains un peu plus larges que les épaules, corps aligné de la tête aux talons. Descends la poitrine près du sol en contrôlant, puis pousse. Version plus facile : genoux au sol, ou mains sur un banc.',
+  gainage:
+    'Sur les avant-bras, coudes sous les épaules. Serre les abdos et les fessiers sans creuser le bas du dos. Respire normalement, regard vers le sol.',
+  squats:
+    'Pieds largeur d’épaules, pointes légèrement ouvertes. Descends comme pour t’asseoir, dos droit, genoux dans l’axe des pieds, talons au sol. Remonte en poussant dans le sol.',
+  fentes:
+    'Un grand pas en avant, descends jusqu’à ce que les deux genoux forment un angle droit, le genou arrière près du sol. Buste droit. Remonte et alterne.',
+  echauffement: 'Marche rapide, puis quelques montées de genoux, talons-fesses et rotations de chevilles.',
+  fractionne:
+    'Cours à une allure où tu peux encore parler par phrases courtes. Pendant la marche, récupère sans t’arrêter complètement.',
+  calme: 'Marche lente et respiration ample, puis étirements légers des mollets et des cuisses.',
+};
+
+function runWorkout(id: string): SportState['workouts'][number] {
+  return {
+    id,
+    title: 'Course fractionnée',
+    type: 'cardio',
+    focus: 'Endurance douce, alternance course et marche',
+    notes: 'Une chaussure de course confortable suffit. Si tu es essoufflé au point de ne plus pouvoir parler, ralentis.',
+    exercises: [
+      ex(`${id}-warm`, 'Échauffement', { kind: 'time', durationSec: 300, instructions: TXT.echauffement }),
+      ex(`${id}-int`, 'Course et marche', {
+        kind: 'interval',
+        sets: 8,
+        workSec: 60,
+        recoverSec: 120,
+        workLabel: 'Course',
+        recoverLabel: 'Marche',
+        instructions: TXT.fractionne,
+        progressive: true,
+      }),
+      ex(`${id}-cool`, 'Retour au calme', { kind: 'time', durationSec: 180, instructions: TXT.calme }),
+    ],
+  };
+}
+
+export function defaultSport(): SportState {
+  return {
+    workouts: [
+      {
+        id: 'w-upper',
+        title: 'Haut du corps',
+        type: 'force',
+        focus: 'Pectoraux, épaules, bras et gainage',
+        notes: '',
+        exercises: [
+          ex('w-upper-pompes', 'Pompes', { sets: 3, reps: 8, restSec: 60, instructions: TXT.pompes, progressive: true }),
+          ex('w-upper-dips', 'Dips adaptés', {
+            sets: 2,
+            reps: 8,
+            restSec: 60,
+            progressive: true,
+            instructions:
+              'Mains sur le bord d’une chaise stable ou d’un banc, jambes fléchies. Descends en pliant les coudes jusqu’à 90° au maximum, sans douleur aux épaules, puis remonte.',
+          }),
+          ex('w-upper-gainage', 'Gainage', { kind: 'time', sets: 3, durationSec: 20, restSec: 45, instructions: TXT.gainage, progressive: true }),
+          ex('w-upper-superman', 'Superman', {
+            sets: 2,
+            reps: 12,
+            restSec: 45,
+            progressive: true,
+            instructions:
+              'Allongé sur le ventre, bras tendus devant toi. Lève doucement bras et jambes de quelques centimètres, tiens une seconde, redescends. Regard vers le sol.',
+          }),
+        ],
+      },
+      runWorkout('w-run'),
+      {
+        id: 'w-lower',
+        title: 'Bas du corps',
+        type: 'force',
+        focus: 'Cuisses, fessiers et mollets',
+        notes: '',
+        exercises: [
+          ex('w-lower-squats', 'Squats', { sets: 3, reps: 12, restSec: 60, instructions: TXT.squats, progressive: true }),
+          ex('w-lower-fentes', 'Fentes', { sets: 2, reps: 10, perSide: true, restSec: 60, instructions: TXT.fentes, progressive: true }),
+          ex('w-lower-pont', 'Pont fessier', {
+            sets: 3,
+            reps: 12,
+            restSec: 45,
+            progressive: true,
+            instructions:
+              'Sur le dos, genoux pliés, pieds à plat. Pousse dans les talons pour lever le bassin jusqu’à aligner genoux, hanches et épaules. Serre les fessiers en haut une seconde.',
+          }),
+          ex('w-lower-mollets', 'Mollets', {
+            sets: 3,
+            reps: 15,
+            restSec: 30,
+            progressive: true,
+            instructions:
+              'Debout, en appui léger contre un mur. Monte sur la pointe des pieds le plus haut possible, redescends lentement. Plus difficile : sur une marche, talons dans le vide.',
+          }),
+        ],
+      },
+      {
+        id: 'w-active',
+        title: 'Récupération active',
+        type: 'mobilite',
+        focus: 'Marche, mobilité et étirements doux',
+        notes: 'Aucune intensité aujourd’hui : on bouge pour récupérer.',
+        exercises: [
+          ex('w-active-marche', 'Marche', { kind: 'time', durationSec: 1200, instructions: 'Vingt minutes à allure confortable, idéalement dehors.' }),
+          ex('w-active-hanches', 'Mobilité des hanches', {
+            kind: 'free',
+            durationSec: 300,
+            instructions: 'Cercles de hanches, fente basse tenue 30 secondes de chaque côté, papillon assis. Amplitude sans douleur.',
+          }),
+          ex('w-active-epaules', 'Mobilité des épaules', {
+            kind: 'free',
+            durationSec: 300,
+            instructions: 'Cercles de bras vers l’avant et l’arrière, ouverture de la poitrine contre un mur, passages de serviette derrière le dos.',
+          }),
+          ex('w-active-etirements', 'Étirements doux', {
+            kind: 'free',
+            durationSec: 300,
+            instructions: 'Ischio-jambiers, quadriceps, mollets, dos. Tiens chaque position 20 à 30 secondes en respirant, sans à-coups.',
+          }),
+        ],
+      },
+      {
+        id: 'w-full',
+        title: 'Corps entier',
+        type: 'force',
+        focus: 'Une séance complète, du haut et du bas',
+        notes: '',
+        exercises: [
+          ex('w-full-squats', 'Squats', { sets: 3, reps: 12, restSec: 60, instructions: TXT.squats, progressive: true }),
+          ex('w-full-pompes', 'Pompes', { sets: 3, reps: 8, restSec: 60, instructions: TXT.pompes, progressive: true }),
+          ex('w-full-fentes', 'Fentes', { sets: 2, reps: 10, perSide: true, restSec: 60, instructions: TXT.fentes, progressive: true }),
+          ex('w-full-gainage', 'Gainage', { kind: 'time', sets: 3, durationSec: 20, restSec: 45, instructions: TXT.gainage, progressive: true }),
+        ],
+      },
+      {
+        id: 'w-rest',
+        title: 'Récupération',
+        type: 'repos',
+        focus: 'Repos, mobilité douce et préparation de la semaine',
+        notes: '',
+        exercises: [
+          ex('w-rest-marche', 'Marche', { kind: 'free', durationSec: 1200, optional: true, instructions: 'Facultative : une balade tranquille si tu en as envie.' }),
+          ex('w-rest-mobilite', 'Mobilité douce', { kind: 'free', durationSec: 600, instructions: 'Quelques minutes de mouvements lents : nuque, épaules, hanches, chevilles.' }),
+          ex('w-rest-prepa', 'Préparation de la semaine', {
+            kind: 'free',
+            instructions: 'Regarde ton planning, cale tes séances, prépare ta liste de courses et tes tenues.',
+          }),
+        ],
+      },
+    ],
+    week: ['w-upper', 'w-run', 'w-lower', 'w-active', 'w-full', 'w-run', 'w-rest'],
+    progression: {
+      enabled: true,
+      startDate: todayKey(),
+      lengthDays: 30,
+      phases: [
+        {
+          id: 'p1',
+          name: 'Fondations',
+          fromDay: 1,
+          toDay: 7,
+          repsDelta: 0,
+          setsDelta: 0,
+          timeDeltaSec: 0,
+          workDeltaSec: 0,
+          recoverDeltaSec: 0,
+          description: 'On apprend les bons mouvements et on installe le rythme.',
+        },
+        {
+          id: 'p2',
+          name: 'Construction',
+          fromDay: 8,
+          toDay: 14,
+          repsDelta: 2,
+          setsDelta: 0,
+          timeDeltaSec: 10,
+          workDeltaSec: 30,
+          recoverDeltaSec: -30,
+          description: 'Un peu plus de volume. Course 1 min 30, marche 1 min 30.',
+        },
+        {
+          id: 'p3',
+          name: 'Progression',
+          fromDay: 15,
+          toDay: 21,
+          repsDelta: 4,
+          setsDelta: 0,
+          timeDeltaSec: 20,
+          workDeltaSec: 60,
+          recoverDeltaSec: -30,
+          description: 'Tu tiens plus longtemps. Course 2 min, marche 1 min 30.',
+        },
+        {
+          id: 'p4',
+          name: 'Intensification',
+          fromDay: 22,
+          toDay: 26,
+          repsDelta: 5,
+          setsDelta: 0,
+          timeDeltaSec: 30,
+          workDeltaSec: 90,
+          recoverDeltaSec: -30,
+          description: 'Le palier le plus exigeant. Course 2 min 30, marche 1 min 30.',
+        },
+        {
+          id: 'p5',
+          name: 'Allègement et bilan',
+          fromDay: 27,
+          toDay: 30,
+          repsDelta: 2,
+          setsDelta: 0,
+          timeDeltaSec: 10,
+          workDeltaSec: 30,
+          recoverDeltaSec: -30,
+          description: 'Volume réduit pour récupérer et consolider. Le jour 30, compare tes sensations avec le jour 1.',
+        },
+      ],
+    },
+    log: {},
+  };
+}
+
+// ───────────────────────── Nutrition
+
+let itemSeq = 0;
+function items(list: [string, string][]): FoodItem[] {
+  return list.map(([name, qty]) => ({ id: `fi-${++itemSeq}`, name, qty }));
+}
+
+function meal(title: string, list: [string, string][], notes = '', recipeId: string | null = null): PlannedMeal {
+  return { title, items: items(list), notes, recipeId };
+}
+
+export function defaultNutrition(): NutritionState {
+  itemSeq = 0;
+  const B = 's-breakfast';
+  const L = 's-lunch';
+  const S = 's-snack';
+  const D = 's-dinner';
+  const porridge = meal('Porridge, fruits rouges et amandes', [
+    ['Flocons d’avoine', '50 g'],
+    ['Lait ou boisson végétale', '200 ml'],
+    ['Fruits rouges', '1 poignée'],
+    ['Amandes', '10'],
+  ], '', 'r-porridge');
+  return {
+    slots: [
+      { id: B, name: 'Petit-déjeuner', time: '08:00', emoji: '🥣' },
+      { id: L, name: 'Déjeuner', time: '12:30', emoji: '🥗' },
+      { id: S, name: 'Collation', time: '16:30', emoji: '🍎' },
+      { id: D, name: 'Dîner', time: '19:30', emoji: '🍽️' },
+    ],
+    plan: [
+      // Lundi
+      {
+        [B]: porridge,
+        [L]: meal('Saumon, riz complet et haricots verts', [
+          ['Saumon', '120 g'],
+          ['Riz complet', '70 g cru'],
+          ['Haricots verts', '200 g'],
+          ['Huile d’olive', '1 c. à soupe'],
+        ], 'Un filet de citron sur le poisson.'),
+        [S]: meal('Yaourt nature et noix', [
+          ['Yaourt nature', '1'],
+          ['Noix', '5 cerneaux'],
+        ]),
+        [D]: meal('Omelette aux épinards et salade', [
+          ['Œufs', '2 ou 3'],
+          ['Épinards', '1 grosse poignée'],
+          ['Pain complet', '1 tranche'],
+          ['Salade verte', '1 bol'],
+        ], '', 'r-omelette'),
+      },
+      // Mardi
+      {
+        [B]: meal('Tartines complètes, œufs et avocat', [
+          ['Pain complet', '2 tranches'],
+          ['Œufs', '2'],
+          ['Avocat', '½'],
+          ['Citron', 'quelques gouttes'],
+        ]),
+        [L]: meal('Bowl poulet, quinoa et brocoli', [
+          ['Poulet', '120 g'],
+          ['Quinoa', '70 g cru'],
+          ['Brocoli', '200 g'],
+          ['Huile d’olive', '1 c. à soupe'],
+        ]),
+        [S]: meal('Fruit et amandes', [
+          ['Fruit de saison', '1'],
+          ['Amandes', '1 petite poignée'],
+        ]),
+        [D]: meal('Soupe de légumes verts et tartine de sardines', [
+          ['Courgette, poireau, épinards', '1 grand bol'],
+          ['Sardines', '1 boîte'],
+          ['Pain complet', '1 tranche'],
+        ]),
+      },
+      // Mercredi
+      {
+        [B]: meal('Yaourt, flocons d’avoine et fruits rouges', [
+          ['Yaourt nature', '1 ou 2'],
+          ['Flocons d’avoine', '30 g'],
+          ['Fruits rouges', '1 poignée'],
+        ], '', 'r-bowl'),
+        [L]: meal('Salade de lentilles, avocat et citron', [
+          ['Lentilles cuites', '150 g'],
+          ['Avocat', '½'],
+          ['Légumes croquants', '1 bol'],
+          ['Huile d’olive et citron', 'pour l’assaisonnement'],
+        ], '', 'r-lentilles'),
+        [S]: meal('Boisson gingembre-citron et noix', [
+          ['Boisson gingembre-citron', '1 tasse'],
+          ['Noix', '5 cerneaux'],
+        ], '', 'r-gingembre'),
+        [D]: meal('Maquereau, pommes de terre et salade', [
+          ['Maquereau', '1 filet'],
+          ['Pommes de terre', '2 ou 3'],
+          ['Salade verte', '1 bol'],
+        ]),
+      },
+      // Jeudi
+      {
+        [B]: meal('Overnight oats aux fruits rouges', [
+          ['Flocons d’avoine', '50 g'],
+          ['Yaourt nature', '1'],
+          ['Fruits rouges', '1 poignée'],
+        ], 'À préparer la veille au soir.', 'r-overnight'),
+        [L]: meal('Wrap complet thon, avocat et crudités', [
+          ['Galette complète', '1 ou 2'],
+          ['Thon au naturel', '1 petite boîte'],
+          ['Avocat', '½'],
+          ['Crudités', '1 poignée'],
+        ]),
+        [S]: meal('Yaourt nature et fruits rouges', [
+          ['Yaourt nature', '1'],
+          ['Fruits rouges', '1 poignée'],
+        ]),
+        [D]: meal('Poêlée de légumes verts, œufs et riz complet', [
+          ['Légumes verts', '250 g'],
+          ['Œufs', '2'],
+          ['Riz complet', '60 g cru'],
+        ]),
+      },
+      // Vendredi
+      {
+        [B]: porridge,
+        [L]: meal('Saumon au four, patate douce et brocoli', [
+          ['Saumon', '120 g'],
+          ['Patate douce', '1 moyenne'],
+          ['Brocoli', '200 g'],
+        ], '', 'r-saumon'),
+        [S]: meal('Pomme et amandes', [
+          ['Pomme', '1'],
+          ['Amandes', '1 petite poignée'],
+        ]),
+        [D]: meal('Salade pois chiches, avocat et épinards', [
+          ['Pois chiches', '150 g'],
+          ['Avocat', '½'],
+          ['Pousses d’épinards', '2 poignées'],
+          ['Huile d’olive', '1 c. à soupe'],
+        ]),
+      },
+      // Samedi
+      {
+        [B]: meal('Œufs brouillés, pain complet et fruit', [
+          ['Œufs', '2'],
+          ['Pain complet', '1 ou 2 tranches'],
+          ['Fruit', '1'],
+        ]),
+        [L]: meal('Pâtes complètes, sauce tomate et poulet', [
+          ['Pâtes complètes', '80 g crues'],
+          ['Sauce tomate maison', '1 louche'],
+          ['Poulet', '100 g'],
+        ]),
+        [S]: meal('Smoothie yaourt et fruits rouges', [
+          ['Yaourt nature', '1'],
+          ['Fruits rouges', '1 poignée'],
+          ['Flocons d’avoine', '1 c. à soupe'],
+        ]),
+        [D]: meal('Repas libre, à savourer', [], 'Un repas plaisir fait partie d’une alimentation équilibrée.'),
+      },
+      // Dimanche
+      {
+        [B]: meal('Brunch : œufs, avocat, yaourt et fruits', [
+          ['Œufs', '2'],
+          ['Avocat', '½'],
+          ['Yaourt nature', '1'],
+          ['Fruits', '1 bol'],
+        ]),
+        [L]: meal('Sardines ou truite, légumes rôtis et quinoa', [
+          ['Poisson gras', '1 portion'],
+          ['Légumes de saison rôtis', '1 plaque'],
+          ['Quinoa', '60 g cru'],
+        ]),
+        [S]: meal('Fruits et noix', [
+          ['Fruit de saison', '1'],
+          ['Noix', '5 cerneaux'],
+        ]),
+        [D]: meal('Soupe maison et tartines', [
+          ['Soupe de légumes', '1 grand bol'],
+          ['Pain complet', '1 ou 2 tranches'],
+          ['Fromage ou œuf', '1 portion'],
+        ]),
+      },
+    ],
+    foods: [
+      { id: 'f-gingembre', name: 'Gingembre', emoji: '🫚', category: 'Épices et aromates', favorite: false,
+        benefits: 'Apporte beaucoup de goût sans sucre ni sel ajoutés. Agréable en infusion ; certaines personnes le trouvent utile pour la digestion.',
+        tip: 'Garde-le au congélateur : il se râpe très facilement sans être épluché.' },
+      { id: 'f-citron', name: 'Citron', emoji: '🍋', category: 'Fruits', favorite: false,
+        benefits: 'Source de vitamine C, qui contribue au fonctionnement normal du système immunitaire. Relève plats, poissons et boissons.',
+        tip: 'Le zeste parfume autant que le jus : pense à le râper sur les légumes.' },
+      { id: 'f-fruits-rouges', name: 'Fruits rouges', emoji: '🫐', category: 'Fruits', favorite: false,
+        benefits: 'Riches en fibres et en vitamine C, naturellement peu sucrés. Parfaits au petit-déjeuner ou en collation.',
+        tip: 'Les fruits rouges surgelés sont aussi intéressants et bien moins chers hors saison.' },
+      { id: 'f-oeufs', name: 'Œufs', emoji: '🥚', category: 'Protéines', favorite: false,
+        benefits: 'Protéines de qualité, vitamines B12 et D. Rassasiants, économiques et prêts en cinq minutes.',
+        tip: 'Des œufs durs d’avance au frigo font une collation express (3 à 4 jours).' },
+      { id: 'f-avocat', name: 'Avocat', emoji: '🥑', category: 'Fruits', favorite: false,
+        benefits: 'Bonnes graisses mono-insaturées et fibres. Très rassasiant : un demi-avocat suffit souvent.',
+        tip: 'Un filet de citron évite qu’il noircisse.' },
+      { id: 'f-poissons-gras', name: 'Poissons gras', emoji: '🐟', category: 'Protéines', favorite: false,
+        benefits: 'Saumon, sardine, maquereau, hareng : sources d’oméga-3. Repère courant : du poisson deux fois par semaine, dont un poisson gras.',
+        tip: 'Les sardines et maquereaux en conserve sont tout aussi intéressants et très pratiques.' },
+      { id: 'f-noix', name: 'Amandes et noix', emoji: '🌰', category: 'Fruits à coque', favorite: false,
+        benefits: 'Bonnes graisses, fibres et magnésium. Repère courant : une petite poignée par jour, sans sel ajouté.',
+        tip: 'Prépare de petites portions dans des boîtes pour la semaine.' },
+      { id: 'f-legumes-verts', name: 'Légumes verts', emoji: '🥦', category: 'Légumes', favorite: false,
+        benefits: 'Fibres, vitamines (K, B9) et minéraux. Repère : au moins cinq portions de fruits et légumes par jour.',
+        tip: 'Les légumes surgelés nature gardent leurs qualités et font gagner du temps.' },
+      { id: 'f-yaourt', name: 'Yaourts nature', emoji: '🥛', category: 'Produits laitiers', favorite: false,
+        benefits: 'Protéines et calcium, sans sucre ajouté. Tu choisis toi-même ce que tu y ajoutes.',
+        tip: 'Ajoute fruits, flocons ou un peu de miel plutôt que d’acheter des yaourts déjà sucrés.' },
+      { id: 'f-avoine', name: 'Flocons d’avoine', emoji: '🌾', category: 'Céréales complètes', favorite: false,
+        benefits: 'Céréale complète riche en fibres, dont des bêta-glucanes. Une énergie qui tient au corps toute la matinée.',
+        tip: 'Le porridge se prépare en trois minutes, et les overnight oats la veille.' },
+      { id: 'f-huile-olive', name: 'Huile d’olive', emoji: '🫒', category: 'Matières grasses', favorite: false,
+        benefits: 'Riche en acides gras mono-insaturés. Idéale pour l’assaisonnement et la cuisson douce.',
+        tip: 'Une cuillère à soupe par repas suffit pour assaisonner une assiette.' },
+      { id: 'f-legumineuses', name: 'Légumineuses', emoji: '🫘', category: 'Protéines', favorite: false,
+        benefits: 'Lentilles, pois chiches, haricots : protéines végétales et fibres. Repère courant : au moins deux fois par semaine.',
+        tip: 'En bocal ou en conserve, il suffit de les rincer.' },
+    ],
+    recipes: [
+      {
+        id: 'r-gingembre',
+        title: 'Boisson gingembre-citron',
+        emoji: '🫚',
+        category: 'Boissons',
+        prepMin: 10,
+        servings: 1,
+        favorite: true,
+        ingredients: items([
+          ['Gingembre frais', '2 à 3 cm'],
+          ['Citron', '½'],
+          ['Eau', '300 ml'],
+          ['Miel', '1 c. à café (facultatif)'],
+          ['Menthe fraîche', 'quelques feuilles (facultatif)'],
+        ]),
+        steps: [
+          'Épluche le gingembre (le bord d’une cuillère gratte très bien la peau) puis coupe-le en fines rondelles ou râpe-le.',
+          'Porte l’eau à frémissement et verse-la sur le gingembre.',
+          'Laisse infuser 8 à 10 minutes, à couvert. Plus longtemps, ce sera plus piquant.',
+          'Filtre, puis ajoute le jus du demi-citron, et le miel si tu le souhaites, quand la boisson a un peu tiédi.',
+          'Version fraîche : laisse refroidir et garde au réfrigérateur jusqu’à 24 heures.',
+        ],
+        notes:
+          'Une boisson chaude agréable qui participe à ton hydratation. Elle ne « détoxifie » pas l’organisme et ne fait pas maigrir : le foie et les reins s’en chargent très bien. En cas de reflux, de grossesse ou de traitement anticoagulant, demande conseil à un professionnel de santé avant d’en boire souvent.',
+      },
+      {
+        id: 'r-overnight',
+        title: 'Overnight oats aux fruits rouges',
+        emoji: '🫙',
+        category: 'Petit-déjeuner',
+        prepMin: 5,
+        servings: 1,
+        favorite: false,
+        ingredients: items([
+          ['Flocons d’avoine', '50 g'],
+          ['Yaourt nature', '1'],
+          ['Lait ou boisson végétale', '80 ml'],
+          ['Fruits rouges', '1 poignée'],
+          ['Amandes effilées', '1 c. à soupe'],
+        ]),
+        steps: [
+          'Dans un bocal, mélange les flocons, le yaourt et le lait.',
+          'Ajoute les fruits rouges par-dessus, ferme et laisse une nuit au réfrigérateur.',
+          'Le matin, parsème d’amandes. Se mange froid.',
+        ],
+        notes: 'Se garde deux jours au frais : tu peux en préparer deux d’un coup.',
+      },
+      {
+        id: 'r-porridge',
+        title: 'Porridge express',
+        emoji: '🥣',
+        category: 'Petit-déjeuner',
+        prepMin: 5,
+        servings: 1,
+        favorite: false,
+        ingredients: items([
+          ['Flocons d’avoine', '50 g'],
+          ['Lait ou boisson végétale', '200 ml'],
+          ['Fruits rouges', '1 poignée'],
+          ['Amandes', '10'],
+          ['Cannelle', '1 pincée'],
+        ]),
+        steps: [
+          'Fais chauffer les flocons et le lait à feu doux 3 à 4 minutes en remuant.',
+          'Verse dans un bol, ajoute les fruits rouges, les amandes concassées et la cannelle.',
+        ],
+        notes: '',
+      },
+      {
+        id: 'r-omelette',
+        title: 'Omelette épinards et avocat',
+        emoji: '🍳',
+        category: 'Plats',
+        prepMin: 10,
+        servings: 1,
+        favorite: false,
+        ingredients: items([
+          ['Œufs', '2 ou 3'],
+          ['Pousses d’épinards', '1 grosse poignée'],
+          ['Avocat', '½'],
+          ['Huile d’olive', '1 c. à café'],
+          ['Sel, poivre, herbes', 'à ton goût'],
+        ]),
+        steps: [
+          'Fais tomber les épinards 1 minute dans la poêle avec l’huile.',
+          'Bats les œufs avec le sel, le poivre et les herbes, verse sur les épinards.',
+          'Cuis à feu moyen 3 à 4 minutes, plie l’omelette et sers avec l’avocat en tranches.',
+        ],
+        notes: '',
+      },
+      {
+        id: 'r-saumon',
+        title: 'Saumon au four, légumes verts et huile d’olive',
+        emoji: '🐟',
+        category: 'Plats',
+        prepMin: 25,
+        servings: 2,
+        favorite: false,
+        ingredients: items([
+          ['Pavés de saumon', '2'],
+          ['Brocoli ou haricots verts', '400 g'],
+          ['Huile d’olive', '2 c. à soupe'],
+          ['Citron', '1'],
+          ['Ail, aneth ou persil', 'à ton goût'],
+        ]),
+        steps: [
+          'Préchauffe le four à 200 °C.',
+          'Dispose les légumes sur une plaque, arrose d’une cuillère d’huile, sale légèrement et enfourne 10 minutes.',
+          'Ajoute le saumon, quelques rondelles de citron et les herbes, arrose du reste d’huile.',
+          'Prolonge la cuisson 12 à 15 minutes selon l’épaisseur du poisson.',
+        ],
+        notes: 'Avec une patate douce ou du riz complet pour un repas complet.',
+      },
+      {
+        id: 'r-bowl',
+        title: 'Bowl yaourt, amandes, noix et fruits rouges',
+        emoji: '🍓',
+        category: 'Collations',
+        prepMin: 3,
+        servings: 1,
+        favorite: false,
+        ingredients: items([
+          ['Yaourt nature', '1 ou 2'],
+          ['Fruits rouges', '1 poignée'],
+          ['Amandes et noix', '1 petite poignée'],
+          ['Flocons d’avoine', '2 c. à soupe'],
+        ]),
+        steps: ['Verse le yaourt dans un bol.', 'Ajoute les fruits, les flocons et les fruits à coque concassés.'],
+        notes: '',
+      },
+      {
+        id: 'r-lentilles',
+        title: 'Salade de lentilles, avocat et citron',
+        emoji: '🥗',
+        category: 'Plats',
+        prepMin: 15,
+        servings: 2,
+        favorite: false,
+        ingredients: items([
+          ['Lentilles cuites', '300 g'],
+          ['Avocat', '1'],
+          ['Concombre', '½'],
+          ['Oignon rouge', '¼'],
+          ['Huile d’olive', '2 c. à soupe'],
+          ['Citron', '1'],
+          ['Persil ou coriandre', '1 petit bouquet'],
+        ]),
+        steps: [
+          'Rince les lentilles et égoutte-les.',
+          'Coupe l’avocat, le concombre et l’oignon en petits dés.',
+          'Mélange avec l’huile, le jus du citron, les herbes, le sel et le poivre.',
+        ],
+        notes: 'Se garde un jour au frais (ajoute l’avocat au dernier moment).',
+      },
+    ],
+    shopping: [
+      { id: 'sh-1', name: 'Flocons d’avoine', qty: '1 paquet', category: 'Épicerie', checked: false },
+      { id: 'sh-2', name: 'Fruits rouges surgelés', qty: '1 sachet', category: 'Surgelés', checked: false },
+      { id: 'sh-3', name: 'Œufs', qty: '12', category: 'Frais', checked: false },
+      { id: 'sh-4', name: 'Yaourts nature', qty: '8', category: 'Frais', checked: false },
+      { id: 'sh-5', name: 'Citrons', qty: '3', category: 'Fruits et légumes', checked: false },
+      { id: 'sh-6', name: 'Gingembre frais', qty: '1 morceau', category: 'Fruits et légumes', checked: false },
+      { id: 'sh-7', name: 'Avocats', qty: '3', category: 'Fruits et légumes', checked: false },
+      { id: 'sh-8', name: 'Épinards et brocoli', qty: '', category: 'Fruits et légumes', checked: false },
+      { id: 'sh-9', name: 'Saumon ou maquereau', qty: '2 portions', category: 'Poissons et viandes', checked: false },
+      { id: 'sh-10', name: 'Amandes et noix', qty: '1 sachet', category: 'Épicerie', checked: false },
+    ],
+    water: { goalMl: 1500, glassMl: 250, log: {} },
+    mealLog: {},
+    principles: [
+      'Manger varié, sans aliment interdit.',
+      'Écouter sa faim et sa satiété, manger sans écran quand c’est possible.',
+      'Pas de régime restrictif : on ajoute du bon plutôt que de supprimer.',
+      'Aucun aliment ne « détoxifie » le corps ni ne fait fondre une zone précise.',
+      'Pour un besoin particulier, un ou une diététicienne peut t’accompagner.',
+    ],
+  };
+}
+
+// ───────────────────────── Visage
+
+export function defaultFace(): FaceState {
+  return {
+    routines: [
+      {
+        id: 'r-morning',
+        name: 'Matin',
+        icon: 'sun',
+        time: '07:30',
+        steps: [
+          { id: 'fs-m-clean', title: 'Nettoyage doux', durationMin: 1, optional: false, productId: 'p-cleanser',
+            description: 'Eau tiède ou nettoyant doux sans savon. Sèche en tamponnant avec une serviette propre, sans frotter.' },
+          { id: 'fs-m-hydra', title: 'Hydratation', durationMin: 1, optional: false, productId: 'p-cream',
+            description: 'Une crème adaptée à ton type de peau, sur le visage et le cou.' },
+          { id: 'fs-m-spf', title: 'Protection solaire SPF 30 à 50', durationMin: 1, optional: false, productId: 'p-spf',
+            description: 'Dernière étape du matin, même quand le ciel est gris. Environ deux longueurs de doigt pour le visage et le cou ; renouvelle si tu restes longtemps dehors.' },
+        ],
+      },
+      {
+        id: 'r-evening',
+        name: 'Soir',
+        icon: 'moon',
+        time: '21:30',
+        steps: [
+          { id: 'fs-e-clean', title: 'Nettoyage', durationMin: 1, optional: false, productId: 'p-cleanser',
+            description: 'Retire la crème solaire, le sébum et la pollution de la journée. Avec un écran solaire très résistant, un double nettoyage peut aider.' },
+          { id: 'fs-e-hydra', title: 'Hydratation', durationMin: 1, optional: false, productId: 'p-cream',
+            description: 'Ta crème hydratante, appliquée sur une peau propre.' },
+          { id: 'fs-e-massage', title: 'Massage facial doux (2 min)', durationMin: 2, optional: true, productId: 'p-oil',
+            description: 'Facultatif. Avec ta crème ou quelques gouttes d’huile, suis le guide de massage pas à pas.' },
+        ],
+      },
+    ],
+    massage: [
+      { id: 'm-prep', title: 'Préparer', durationSec: 10, illustration: 'prep',
+        description: 'Mains propres, une noisette de crème ou deux à trois gouttes d’huile pour que les doigts glissent. Pression légère : la peau ne doit jamais tirer.' },
+      { id: 'm-neck', title: 'Cou', durationSec: 20, illustration: 'neck',
+        description: 'Du dessous des oreilles vers les clavicules, fais glisser les doigts à plat, cinq ou six fois. Mouvement lent, toujours vers le bas.' },
+      { id: 'm-jaw', title: 'Ligne de la mâchoire', durationSec: 25, illustration: 'jaw',
+        description: 'Du menton vers les oreilles, glisse avec les phalanges repliées le long de l’os. Aucune pression forte sur l’articulation, juste devant l’oreille.' },
+      { id: 'm-cheeks', title: 'Pommettes', durationSec: 25, illustration: 'cheeks',
+        description: 'Des ailes du nez vers les tempes, en remontant sous l’os de la pommette. Cinq passages lents.' },
+      { id: 'm-eyes', title: 'Contour des yeux', durationSec: 15, illustration: 'eyes',
+        description: 'Avec l’annulaire, tapote très doucement sous l’œil, de l’intérieur vers l’extérieur. Jamais de frottement.' },
+      { id: 'm-forehead', title: 'Front et tempes', durationSec: 25, illustration: 'forehead',
+        description: 'Mains à plat, lisse le front du centre vers les tempes, puis finis par de petits cercles sur les tempes.' },
+    ],
+    products: [
+      { id: 'p-cleanser', name: 'Nettoyant doux', brand: '', type: 'Nettoyant', usage: 'matin et soir', notes: 'À compléter avec ton produit.', inUse: true, openedAt: '' },
+      { id: 'p-cream', name: 'Crème hydratante', brand: '', type: 'Hydratant', usage: 'matin et soir', notes: 'À compléter avec ton produit.', inUse: true, openedAt: '' },
+      { id: 'p-spf', name: 'Écran solaire SPF 30 à 50', brand: '', type: 'Protection solaire', usage: 'matin', notes: 'À compléter avec ton produit.', inUse: true, openedAt: '' },
+      { id: 'p-oil', name: 'Huile ou baume de massage', brand: '', type: 'Massage', usage: 'soir', notes: 'Facultatif : ta crème hydratante convient aussi.', inUse: false, openedAt: '' },
+    ],
+    wellbeing: [
+      { id: 'wb-truth', title: 'Ce que le massage fait, et ne fait pas',
+        body: 'Un massage doux peut diminuer temporairement les gonflements, surtout le matin, et procure une vraie détente. Il ne modifie pas la structure osseuse et ne fait pas fondre la graisse localement.' },
+      { id: 'wb-posture', title: 'Posture de la tête et du cou',
+        body: 'Écran à hauteur des yeux, épaules relâchées, menton légèrement rentré comme si tu allongeais la nuque. Une tête projetée vers l’avant pendant des heures tasse visuellement le cou et la mâchoire, et fatigue la nuque.' },
+      { id: 'wb-tongue', title: 'Position de repos de la langue',
+        body: 'Au repos : langue posée contre le palais, lèvres fermées, dents légèrement écartées, respiration par le nez. C’est une position confortable ; elle ne remodèle pas la mâchoire d’un adulte.' },
+      { id: 'wb-real', title: 'Ce qui joue vraiment sur l’apparence du visage',
+        body: 'Sommeil régulier, hydratation, alimentation variée et un peu moins salée le soir, activité physique, gestion du stress, protection solaire. La masse grasse évolue à l’échelle du corps entier, jamais sur une zone choisie.' },
+      { id: 'wb-excess', title: 'Pas d’excès sur la mâchoire',
+        body: 'Évite les exercices intensifs de mâchoire, les gommes très dures mâchées pendant des heures et les accessoires censés « muscler » la mâchoire : ils peuvent fatiguer ou irriter l’articulation. Douleur, claquement ou blocage : parles-en à un dentiste ou à un médecin.' },
+      { id: 'wb-clench', title: 'Relâcher les dents serrées',
+        body: 'Si tu te surprends à serrer les dents (stress, concentration), relâche : lèvres jointes, dents écartées, épaules basses. Un dentiste peut repérer un serrage nocturne.' },
+    ],
+    log: {},
+  };
+}
+
+// ───────────────────────── Développement intellectuel
+
+export function defaultMind(): MindState {
+  return {
+    goals: [
+      { id: 'g-read', title: 'Lecture', minutes: 15, emoji: '📖', description: 'Un livre de ta liste, téléphone loin de toi.' },
+      { id: 'g-learn', title: 'Apprentissage', minutes: 10, emoji: '🎓', description: 'Une leçon, un cours en vidéo ou un chapitre sur un sujet de ta liste.' },
+      { id: 'g-logic', title: 'Logique ou mémoire', minutes: 10, emoji: '🧩', description: 'Énigmes, échecs, calcul mental, mémorisation : pioche dans les idées.' },
+      { id: 'g-notes', title: 'Prise de notes', minutes: 5, emoji: '✍️', description: 'Résume en quelques lignes ce que tu as retenu, dans ton journal.' },
+    ],
+    categories: [
+      { id: 'c-psy', name: 'Psychologie', emoji: '🧠', color: '#a855f7' },
+      { id: 'c-philo', name: 'Philosophie', emoji: '🏛️', color: '#6366f1' },
+      { id: 'c-histoire', name: 'Histoire', emoji: '📜', color: '#b45309' },
+      { id: 'c-geo', name: 'Géopolitique', emoji: '🌍', color: '#0ea5e9' },
+      { id: 'c-sciences', name: 'Sciences', emoji: '🔬', color: '#10b981' },
+      { id: 'c-tech', name: 'Technologie', emoji: '💻', color: '#64748b' },
+      { id: 'c-finance', name: 'Finance', emoji: '💶', color: '#16a34a' },
+      { id: 'c-eco', name: 'Économie', emoji: '📈', color: '#f59e0b' },
+      { id: 'c-langues', name: 'Langues étrangères', emoji: '🗣️', color: '#ef4444' },
+    ],
+    books: [
+      { id: 'b-kahneman', title: 'Système 1 / Système 2', author: 'Daniel Kahneman', categoryId: 'c-psy', status: 'a-lire', pagesTotal: 0, pagesRead: 0, notes: 'Suggestion : à garder ou à supprimer.', rating: 0 },
+      { id: 'b-sapiens', title: 'Sapiens', author: 'Yuval Noah Harari', categoryId: 'c-histoire', status: 'a-lire', pagesTotal: 0, pagesRead: 0, notes: 'Suggestion : à garder ou à supprimer.', rating: 0 },
+      { id: 'b-aurele', title: 'Pensées pour moi-même', author: 'Marc Aurèle', categoryId: 'c-philo', status: 'a-lire', pagesTotal: 0, pagesRead: 0, notes: 'Suggestion : à garder ou à supprimer.', rating: 0 },
+    ],
+    topics: [
+      { id: 't-invest', title: 'Comprendre les bases de l’investissement', categoryId: 'c-finance', objective: 'Savoir expliquer intérêts composés, diversification et frais.', resources: '', progress: 0, notes: '' },
+      { id: 't-anglais', title: 'Anglais : 10 nouveaux mots par semaine', categoryId: 'c-langues', objective: 'Les réutiliser dans une phrase à l’écrit.', resources: '', progress: 0, notes: '' },
+    ],
+    journal: [],
+    practices: [
+      { id: 'pr-calcul', title: 'Calcul mental', body: 'Additions et multiplications de tête pendant 5 minutes, de plus en plus vite.' },
+      { id: 'pr-sudoku', title: 'Sudoku ou kakuro', body: 'Une grille par jour, en augmentant le niveau quand elle devient facile.' },
+      { id: 'pr-echecs', title: 'Échecs', body: 'Une partie rapide ou trois problèmes tactiques.' },
+      { id: 'pr-loci', title: 'Palais de mémoire', body: 'Associe une liste de 10 éléments aux pièces de ton logement, puis récite-la le lendemain.' },
+      { id: 'pr-mots', title: 'Cinq mots nouveaux', body: 'Apprends cinq mots d’une langue étrangère et réutilise-les dans une phrase.' },
+      { id: 'pr-rappel', title: 'Rappel actif', body: 'Sans regarder tes notes, écris ce dont tu te souviens de ta lecture de la veille.' },
+    ],
+    log: {},
+  };
+}
+
+// ───────────────────────── Habitudes
+
+export function defaultHabits(): HabitsState {
+  return {
+    items: [
+      { id: 'h-water', title: 'Grand verre d’eau au réveil', emoji: '💧', days: ALL, moment: 'matin', note: '', archived: false },
+      { id: 'h-walk', title: 'Marcher 30 minutes', emoji: '🚶', days: ALL, moment: 'journee', note: 'Les trajets à pied comptent.', archived: false },
+      { id: 'h-posture', title: 'Pause posture et étirements', emoji: '🧘', days: ALL, moment: 'journee', note: '', archived: false },
+      { id: 'h-screens', title: 'Pas d’écran 30 min avant de dormir', emoji: '📵', days: ALL, moment: 'soir', note: '', archived: false },
+      { id: 'h-gratitude', title: 'Noter 3 choses positives', emoji: '✨', days: ALL, moment: 'soir', note: '', archived: false },
+      { id: 'h-sleep', title: 'Au lit avant 23 h', emoji: '🌙', days: ALL, moment: 'soir', note: '', archived: false },
+      { id: 'h-plan', title: 'Préparer la semaine', emoji: '🗓️', days: [6], moment: 'libre', note: '', archived: false },
+    ],
+    log: {},
+  };
+}
+
+// ───────────────────────── Rappels
+
+export function defaultReminders(): RemindersState {
+  return {
+    items: [
+      { id: 'rm-wake', title: 'Réveil et hydratation', time: '07:00', days: ALL, enabled: true, module: 'habits',
+        description: 'Un grand verre d’eau, puis quelques minutes de lumière naturelle.' },
+      { id: 'rm-face-am', title: 'Routine visage du matin', time: '07:30', days: ALL, enabled: true, module: 'face',
+        description: 'Nettoyage doux, hydratation, protection solaire.' },
+      { id: 'rm-breakfast', title: 'Petit-déjeuner', time: '08:00', days: ALL, enabled: true, module: 'nutrition',
+        description: 'Ton petit-déjeuner du jour est dans Nutrition.' },
+      { id: 'rm-sport', title: 'Séance de sport', time: '18:00', days: [0, 1, 2, 3, 4, 5], enabled: true, module: 'sport',
+        description: 'Ta séance du jour t’attend dans l’onglet Sport.' },
+      { id: 'rm-face-pm', title: 'Routine visage du soir', time: '21:30', days: ALL, enabled: true, module: 'face',
+        description: 'Nettoyage, hydratation et, si tu veux, deux minutes de massage.' },
+      { id: 'rm-reading', title: 'Lecture', time: '22:00', days: ALL, enabled: true, module: 'mind',
+        description: 'Quinze minutes de lecture, téléphone en mode avion.' },
+      { id: 'rm-bed', title: 'Coucher', time: '22:45', days: ALL, enabled: true, module: 'habits',
+        description: 'Écrans éteints, chambre fraîche et sombre.' },
+      { id: 'rm-week', title: 'Bilan de la semaine', time: '18:30', days: [6], enabled: true, module: 'general',
+        description: 'Regarde tes statistiques et prépare la semaine qui vient.' },
+    ],
+    fired: {},
+  };
+}
+
+// ───────────────────────── Ensemble
+
+export const DATA_VERSION = 1;
+
+export function createDefaultData(): AppData {
+  return {
+    version: DATA_VERSION,
+    createdAt: todayKey(),
+    settings: defaultSettings(),
+    sport: defaultSport(),
+    nutrition: defaultNutrition(),
+    face: defaultFace(),
+    mind: defaultMind(),
+    habits: defaultHabits(),
+    reminders: defaultReminders(),
+    history: {},
+  };
+}
