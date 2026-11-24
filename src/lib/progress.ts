@@ -6,6 +6,7 @@ import type {
   DateKey,
   DaySummary,
   Exercise,
+  FaceExercise,
   ModuleKey,
   ProgressionPhase,
   SportState,
@@ -66,6 +67,21 @@ export function applyProgression(ex: Exercise, phase: ProgressionPhase | null): 
   return out;
 }
 
+// ───────────────────────── Exercices du visage
+
+/**
+ * Rotation : les exercices s'enchaînent dans l'ordre, un le matin puis un le soir.
+ * Avec 3 exercices A, B, C : jour 1 A/B, jour 2 C/A, jour 3 B/C, puis on recommence.
+ */
+export function getFaceExercisesForDate(sport: SportState, key: DateKey): { matin: FaceExercise; soir: FaceExercise } | null {
+  const ft = sport.faceTraining;
+  if (!ft?.enabled || !ft.exercises.length) return null;
+  const n = ft.exercises.length;
+  const day = daysBetween(ft.startDate, key);
+  const at = (slot: number) => ft.exercises[(((2 * day + slot) % n) + n) % n];
+  return { matin: at(0), soir: at(1) };
+}
+
 /** Exercices ajoutés pour ce jour seulement. */
 export function getDayExtras(sport: SportState, key: DateKey): Exercise[] {
   return sport.log[key]?.extras ?? [];
@@ -102,14 +118,14 @@ export function moduleFractions(data: AppData, key: DateKey): ModuleFractions {
     out.habits = scheduled.filter((h) => done.has(h.id)).length / scheduled.length;
   }
 
-  // Sport
+  // Sport : exercices obligatoires de la séance + exercices du visage (matin et soir)
   const workout = getWorkoutForDate(data.sport, key);
-  if (workout) {
-    const required = getDayExercises(data.sport, key).filter((e) => !e.optional);
-    if (required.length) {
-      const done = new Set(data.sport.log[key]?.done ?? []);
-      out.sport = required.filter((e) => done.has(e.id)).length / required.length;
-    }
+  const required = workout ? getDayExercises(data.sport, key).filter((e) => !e.optional) : [];
+  const faceSlots = getFaceExercisesForDate(data.sport, key) ? 2 : 0;
+  if (required.length + faceSlots > 0) {
+    const done = new Set(data.sport.log[key]?.done ?? []);
+    const faceDone = faceSlots ? (data.sport.faceTraining.log[key] ?? []).length : 0;
+    out.sport = (required.filter((e) => done.has(e.id)).length + Math.min(faceSlots, faceDone)) / (required.length + faceSlots);
   }
 
   // Nutrition : moitié repas suivis, moitié hydratation

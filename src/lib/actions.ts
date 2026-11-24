@@ -1,9 +1,9 @@
 // Actions de suivi quotidien partagées (tableau de bord, habitudes).
 // À appeler à l'intérieur d'un update((d) => …).
 
-import { todayKey } from './dates';
+import { startOfWeek, todayKey } from './dates';
 import { getDayExercises, getWorkoutForDate, snapshotDay } from './progress';
-import type { AppData, DateKey, ID } from './types';
+import type { AppData, DateKey, FaceSlot, ID } from './types';
 
 function touch(d: AppData, key: DateKey) {
   if (key !== todayKey()) snapshotDay(d, key);
@@ -76,4 +76,28 @@ export function setMindMinutes(d: AppData, key: DateKey, goalId: ID, minutes: nu
   const day = (d.mind.log[key] ??= {});
   day[goalId] = Math.max(0, minutes);
   touch(d, key);
+}
+
+/** Coche un exercice du visage (matin ou soir) pour la journée. */
+export function toggleFaceTraining(d: AppData, key: DateKey, slot: FaceSlot, value?: boolean) {
+  const list = d.sport.faceTraining.log[key] ?? [];
+  const has = list.includes(slot);
+  const next = value ?? !has;
+  d.sport.faceTraining.log[key] = next ? (has ? list : [...list, slot]) : list.filter((s) => s !== slot);
+  touch(d, key);
+}
+
+/** Soin hebdomadaire : fait (ou non) pour la semaine de cette date. */
+export function isWeeklyDone(d: AppData, key: DateKey, careId: ID): boolean {
+  const care = d.face.weekly.find((c) => c.id === careId);
+  return !!care?.log[startOfWeek(key)];
+}
+
+export function toggleWeekly(d: AppData, key: DateKey, careId: ID, value?: boolean) {
+  const care = d.face.weekly.find((c) => c.id === careId);
+  if (!care) return;
+  const week = startOfWeek(key);
+  const next = value ?? !care.log[week];
+  if (next) care.log[week] = key;
+  else delete care.log[week];
 }

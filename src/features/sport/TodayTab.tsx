@@ -22,6 +22,7 @@ import { cx } from '@/lib/utils';
 import { AddExtraSheet } from './AddExtraSheet';
 import { ExerciseEditor } from './ExerciseEditor';
 import { ExerciseSheet } from './ExerciseSheet';
+import { FaceTrainingCard } from './FaceTrainingCard';
 import {
   describeExercise,
   ensureLog,
@@ -306,6 +307,8 @@ export function TodayTab({ today, onGoTo }: { today: DateKey; onGoTo: (t: SportT
           </div>
         </Card>
       )}
+
+      <FaceTrainingCard today={today} />
 
       <button
         type="button"

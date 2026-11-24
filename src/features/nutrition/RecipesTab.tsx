@@ -138,6 +138,11 @@ export function RecipesTab({
                     <span className="inline-flex items-center gap-1">
                       <Users className="size-3.5" /> {r.servings} pers.
                     </span>
+                    {!!r.kcal && (
+                      <span className="tabular">
+                        ≈ {r.kcal} kcal · {r.protein ?? 0} g prot.{r.servings > 1 ? ' /pers.' : ''}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {!editing && (
@@ -256,7 +261,7 @@ function RecipeSheet({
         onClose={onClose}
         icon={<span className="text-xl leading-none">{recipe.emoji}</span>}
         title={recipe.title || 'Recette sans nom'}
-        subtitle={[recipe.category, `${recipe.prepMin} min`, `${recipe.servings} pers.`].filter(Boolean).join(' · ')}
+        subtitle={[recipe.category, `${recipe.prepMin} min`, `${recipe.servings} pers.`, recipe.kcal ? `≈ ${recipe.kcal} kcal et ${recipe.protein ?? 0} g de protéines par portion` : ''].filter(Boolean).join(' · ')}
         size="lg"
         footer={
           editing ? (
@@ -315,6 +320,12 @@ function RecipeSheet({
               </Field>
               <Field label="Portions">
                 <NumberField value={recipe.servings} onChange={(v) => edit((r) => void (r.servings = v))} min={1} max={20} />
+              </Field>
+              <Field label="Calories par portion">
+                <NumberField value={recipe.kcal ?? 0} onChange={(v) => edit((r) => void (r.kcal = v || undefined))} min={0} max={3000} step={10} suffix="kcal" />
+              </Field>
+              <Field label="Protéines par portion">
+                <NumberField value={recipe.protein ?? 0} onChange={(v) => edit((r) => void (r.protein = v || undefined))} min={0} max={300} suffix="g" />
               </Field>
             </div>
             <div>

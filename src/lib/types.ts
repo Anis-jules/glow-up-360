@@ -115,7 +115,33 @@ export interface SportLogEntry {
   extras?: Exercise[];
 }
 
+/** Exercices du visage : rotation de plusieurs exercices, un le matin et un le soir. */
+export type FaceSlot = 'matin' | 'soir';
+
+export interface FaceExercise {
+  id: ID;
+  name: string;
+  /** Créateur ou source (compte, vidéo…). */
+  author: string;
+  instructions: string;
+  durationSec: number;
+  /** Lien vers la vidéo de référence. */
+  link: string;
+}
+
+export interface FaceTraining {
+  enabled: boolean;
+  /** Point de départ de la rotation. */
+  startDate: DateKey;
+  /** Dans l'ordre de rotation. */
+  exercises: FaceExercise[];
+  /** Créneaux faits chaque jour. */
+  log: Record<DateKey, FaceSlot[]>;
+}
+
 export interface SportState {
+  /** Exercices du visage du matin et du soir. */
+  faceTraining: FaceTraining;
   /** Bibliothèque de séances (programme initial + séances perso). */
   workouts: Workout[];
   /** Séance prévue pour chaque jour (index = Weekday), null = rien de prévu. */
@@ -149,6 +175,9 @@ export interface PlannedMeal {
   items: FoodItem[];
   notes: string;
   recipeId?: ID | null;
+  /** Repères approximatifs pour le repas. */
+  kcal?: number;
+  protein?: number;
 }
 
 export interface Food {
@@ -172,6 +201,9 @@ export interface Recipe {
   steps: string[];
   notes: string;
   favorite: boolean;
+  /** Repères approximatifs par portion. */
+  kcal?: number;
+  protein?: number;
 }
 
 export interface ShoppingItem {
@@ -191,7 +223,21 @@ export interface MealLog {
   feeling?: number;
 }
 
+/** Programme alimentaire : repères quotidiens (modifiables). */
+export interface NutritionProgram {
+  title: string;
+  /** Profil de départ : taille, poids… */
+  profile: string;
+  goal: string;
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  tips: string[];
+}
+
 export interface NutritionState {
+  program: NutritionProgram;
   slots: MealSlot[];
   /** plan[weekday][slotId] */
   plan: Record<ID, PlannedMeal>[];
@@ -265,7 +311,25 @@ export interface FaceLogEntry {
   note: string;
 }
 
+/** Soin à faire une fois par semaine (masque…), sur certains jours. */
+export interface WeeklyCare {
+  id: ID;
+  title: string;
+  emoji: string;
+  /** Jours où il est proposé (ex. samedi et dimanche). */
+  days: Weekday[];
+  durationMin: number;
+  ingredients: FoodItem[];
+  steps: string[];
+  application: string[];
+  notes: string;
+  /** log[lundi de la semaine] = date où il a été fait. */
+  log: Record<DateKey, DateKey>;
+}
+
 export interface FaceState {
+  /** Soins hebdomadaires (masque du week-end…). */
+  weekly: WeeklyCare[];
   routines: Routine[];
   massage: MassageStep[];
   products: Product[];
@@ -394,7 +458,9 @@ export interface RemindersState {
 export type ChecklistLink =
   | { kind: 'habit'; habitId: ID; owned?: boolean }
   | { kind: 'face'; stepId: ID }
-  | { kind: 'water'; parts: string[] };
+  | { kind: 'water'; parts: string[] }
+  | { kind: 'faceTraining'; slot: FaceSlot }
+  | { kind: 'weekly'; careId: ID };
 
 export interface ChecklistItem {
   id: ID;

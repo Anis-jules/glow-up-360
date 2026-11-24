@@ -1,5 +1,6 @@
 import { Clock, Moon, Pencil, Plus, Sun, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { WeeklyCareSection } from './WeeklyCareCard';
 import {
   Button,
   Card,
@@ -414,6 +415,8 @@ export function RoutineTab() {
           </div>
         )}
       </section>
+
+      <WeeklyCareSection />
 
       <Card className="animate-rise" style={{ animationDelay: '120ms' }}>
         <SectionHeader title="Ma peau aujourd’hui" subtitle="Un repère rapide pour suivre ses réactions." />

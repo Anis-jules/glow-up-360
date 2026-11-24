@@ -13,8 +13,9 @@ import {
   Sheet,
   TextInput,
 } from '@/components/ui';
-import { setWater, toggleFaceStep, toggleHabit } from '@/lib/actions';
-import { ALL_DAYS, useToday, weekdayOf } from '@/lib/dates';
+import { setWater, toggleFaceStep, toggleFaceTraining, toggleHabit, toggleWeekly } from '@/lib/actions';
+import { ALL_DAYS, formatDuration, formatRelative, startOfWeek, useToday, weekdayOf } from '@/lib/dates';
+import { getFaceExercisesForDate } from '@/lib/progress';
 import { removeWithUndo, toast } from '@/lib/feedback';
 import { useData, useUpdate } from '@/lib/store';
 import type { AppData, ChecklistItem, DateKey, HabitMoment, Weekday } from '@/lib/types';
@@ -67,6 +68,33 @@ function resolve(data: AppData, item: ChecklistItem, today: DateKey): Resolved {
       done: (data.face.log[today]?.done ?? []).includes(link.stepId),
     };
   }
+  if (link.kind === 'faceTraining') {
+    const plan = getFaceExercisesForDate(data.sport, today);
+    if (!plan) return { item, title: item.label, hidden: true, missing: false, done: false };
+    const ex = plan[link.slot];
+    return {
+      item,
+      title: item.label,
+      subtitle: [ex.name, ex.durationSec ? formatDuration(ex.durationSec) : ''].filter(Boolean).join(' · '),
+      hidden: false,
+      missing: false,
+      done: (data.sport.faceTraining.log[today] ?? []).includes(link.slot),
+    };
+  }
+  if (link.kind === 'weekly') {
+    const care = data.face.weekly.find((c) => c.id === link.careId);
+    if (!care) return { item, title: item.label, hidden: true, missing: true, done: false };
+    const doneOn = care.log[startOfWeek(today)];
+    return {
+      item,
+      title: item.label,
+      subtitle: doneOn ? `Fait cette semaine (${formatRelative(doneOn, today).toLowerCase()})` : `${care.durationMin} min · recette et application dans Visage`,
+      // Proposé seulement les jours prévus (le week-end).
+      hidden: !care.days.includes(weekdayOf(today)),
+      missing: false,
+      done: !!doneOn,
+    };
+  }
   const goal = data.nutrition.water.goalMl;
   const ml = data.nutrition.water.log[today] ?? 0;
   return { item, title: item.label, subtitle: `${litres(ml)} sur ${litres(goal)}`, hidden: false, missing: false, done: goal > 0 && ml >= goal };
@@ -89,6 +117,8 @@ export function ChecklistCard({ delay }: { delay: number }) {
     update((d) => {
       if (link.kind === 'habit') toggleHabit(d, today, link.habitId, v);
       else if (link.kind === 'face') toggleFaceStep(d, today, link.stepId, v);
+      else if (link.kind === 'faceTraining') toggleFaceTraining(d, today, link.slot, v);
+      else if (link.kind === 'weekly') toggleWeekly(d, today, link.careId, v);
     });
   };
 
@@ -242,7 +272,11 @@ function EditList({ rows, onAdd }: { rows: Resolved[]; onAdd: () => void }) {
                   ? `Habitude · ${r.subtitle}`
                   : r.item.link.kind === 'face'
                     ? `Étape visage · ${r.subtitle}`
-                    : 'Eau · objectif réglable dans Nutrition'}
+                    : r.item.link.kind === 'faceTraining'
+                      ? 'Exercice visage · rotation réglable dans Sport'
+                      : r.item.link.kind === 'weekly'
+                        ? 'Soin de la semaine · affiché le week-end, recette dans Visage'
+                        : 'Eau · objectif réglable dans Nutrition'}
             </div>
           </div>
           <ReorderButtons index={i} count={rows.length} onMove={(to) => update((d) => moveItem(d.checklist, i, to))} />

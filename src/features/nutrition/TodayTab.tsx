@@ -23,10 +23,12 @@ import type { DateKey, ID, Weekday } from '@/lib/types';
 import { cx, moveItem } from '@/lib/utils';
 import { ensureMealLog, formatMl, isMealEmpty } from './helpers';
 import { MealEditorSheet, MealLogSheet } from './MealSheets';
+import { ProgramCard } from './ProgramCard';
 
 export function TodayTab({ today, onOpenRecipe }: { today: DateKey; onOpenRecipe: (id: ID) => void }) {
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+      <ProgramCard today={today} className="xl:col-span-5" />
       <HydrationCard today={today} onOpenRecipe={onOpenRecipe} className="xl:col-span-2" />
       <MealsCard today={today} onOpenRecipe={onOpenRecipe} className="xl:col-span-3" />
       <PrinciplesCard className="xl:col-span-5" />
@@ -209,7 +211,7 @@ function MealsCard({ today, onOpenRecipe, className }: { today: DateKey; onOpenR
                 leading={<span className="grid size-9 shrink-0 place-items-center rounded-xl bg-tint/10 text-lg">{slot.emoji}</span>}
                 title={empty ? 'Rien de prévu' : meal!.title || 'Repas sans nom'}
                 muted={empty}
-                subtitle={`${slot.name} · ${slot.time}${log?.actual ? ' · noté' : ''}`}
+                subtitle={`${slot.name} · ${slot.time}${!empty && meal?.kcal ? ` · ≈ ${meal.kcal} kcal · ${meal.protein ?? 0} g prot.` : ''}${log?.actual ? ' · noté' : ''}`}
                 onOpen={() => (editing ? setEditTarget({ wd, slot: slot.id }) : setLogSlot(slot.id))}
                 trailing={
                   editing ? (

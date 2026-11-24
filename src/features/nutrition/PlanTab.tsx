@@ -35,6 +35,8 @@ export function PlanTab({ today, onOpenRecipe }: { today: DateKey; onOpenRecipe:
   const [newSlotId, setNewSlotId] = useState<ID | null>(null);
   const day = plan[wd] ?? {};
   const dayItems = slots.flatMap((s) => day[s.id]?.items ?? []);
+  const dayKcal = slots.reduce((a, s) => a + (day[s.id]?.kcal ?? 0), 0);
+  const dayProtein = slots.reduce((a, s) => a + (day[s.id]?.protein ?? 0), 0);
 
   return (
     <div className="space-y-4">
@@ -62,7 +64,15 @@ export function PlanTab({ today, onOpenRecipe }: { today: DateKey; onOpenRecipe:
         <SectionHeader
           icon={<CalendarDays />}
           title={`Repas du ${WEEKDAYS[wd].toLowerCase()}`}
-          subtitle={editing ? 'Créneaux : nom, heure, ordre' : wd === todayWd ? 'Aujourd’hui' : 'Touche un repas pour le modifier'}
+          subtitle={
+            editing
+              ? 'Créneaux : nom, heure, ordre'
+              : dayKcal
+                ? `≈ ${dayKcal.toLocaleString('fr-FR')} kcal · ${dayProtein} g de protéines (objectif ${data.nutrition.program.kcal.toLocaleString('fr-FR')} kcal · ${data.nutrition.program.protein} g)`
+                : wd === todayWd
+                  ? 'Aujourd’hui'
+                  : 'Touche un repas pour le modifier'
+          }
           editing={editing}
           onToggleEdit={() => setEditing((v) => !v)}
           onAdd={() => {
@@ -141,10 +151,19 @@ export function PlanTab({ today, onOpenRecipe }: { today: DateKey; onOpenRecipe:
                         {meal!.items.map((it) => [it.name, it.qty].filter(Boolean).join(' ')).join(' · ')}
                       </div>
                     )}
-                    {recipe && (
-                      <Chip tone="tint" className="mt-2">
-                        {recipe.emoji} Recette
-                      </Chip>
+                    {(recipe || (!empty && meal?.kcal)) && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {!empty && !!meal?.kcal && (
+                          <Chip>
+                            ≈ {meal.kcal} kcal · {meal.protein ?? 0} g prot.
+                          </Chip>
+                        )}
+                        {recipe && (
+                          <Chip tone="tint">
+                            {recipe.emoji} Recette
+                          </Chip>
+                        )}
+                      </div>
                     )}
                   </div>
                   <ChevronRight className="mt-3 size-4 shrink-0 text-ink-3" />

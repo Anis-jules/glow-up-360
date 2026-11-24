@@ -2,16 +2,18 @@
 // Les identifiants sont fixes : réinitialiser une rubrique retrouve les mêmes repères dans l'historique.
 
 import { todayKey } from './dates';
+import { defaultProgram, LEMON_GINGER_NOTE, programPlan, programRecipes, programShopping, programSlots } from './programmeNutrition';
 import type {
   AppData,
   ChecklistItem,
   Exercise,
+  FaceTraining,
+  WeeklyCare,
   FaceState,
   FoodItem,
   HabitsState,
   MindState,
   NutritionState,
-  PlannedMeal,
   RemindersState,
   Settings,
   SportState,
@@ -153,8 +155,24 @@ function runWorkout(id: string): SportState['workouts'][number] {
   };
 }
 
+/** Les trois exercices du visage, dans l'ordre de rotation (descriptions à compléter par l'utilisateur). */
+export function defaultFaceTraining(): FaceTraining {
+  const blank = 'Description à compléter : colle ici les étapes de sa vidéo, ou son lien dans le champ « Lien ».';
+  return {
+    enabled: true,
+    startDate: todayKey(),
+    exercises: [
+      { id: 'fx-aguusalina', name: 'Exercice d’aguusalina', author: 'aguusalina', instructions: blank, durationSec: 120, link: '' },
+      { id: 'fx-drmadi', name: 'Exercice de drmadi', author: 'drmadi', instructions: blank, durationSec: 120, link: '' },
+      { id: 'fx-trelcat', name: 'Exercice d’Alexandre Trelcat', author: 'Alexandre Trelcat', instructions: blank, durationSec: 120, link: '' },
+    ],
+    log: {},
+  };
+}
+
 export function defaultSport(): SportState {
   return {
+    faceTraining: defaultFaceTraining(),
     workouts: [
       {
         id: 'w-upper',
@@ -326,182 +344,12 @@ function items(list: [string, string][]): FoodItem[] {
   return list.map(([name, qty]) => ({ id: `fi-${++itemSeq}`, name, qty }));
 }
 
-function meal(title: string, list: [string, string][], notes = '', recipeId: string | null = null): PlannedMeal {
-  return { title, items: items(list), notes, recipeId };
-}
-
 export function defaultNutrition(): NutritionState {
   itemSeq = 0;
-  const B = 's-breakfast';
-  const L = 's-lunch';
-  const S = 's-snack';
-  const D = 's-dinner';
-  const porridge = meal('Porridge, fruits rouges et amandes', [
-    ['Flocons d’avoine', '50 g'],
-    ['Lait ou boisson végétale', '200 ml'],
-    ['Fruits rouges', '1 poignée'],
-    ['Amandes', '10'],
-  ], '', 'r-porridge');
   return {
-    slots: [
-      { id: B, name: 'Petit-déjeuner', time: '08:00', emoji: '🥣' },
-      { id: L, name: 'Déjeuner', time: '12:30', emoji: '🥗' },
-      { id: S, name: 'Collation', time: '16:30', emoji: '🍎' },
-      { id: D, name: 'Dîner', time: '19:30', emoji: '🍽️' },
-    ],
-    plan: [
-      // Lundi
-      {
-        [B]: porridge,
-        [L]: meal('Saumon, riz complet et haricots verts', [
-          ['Saumon', '120 g'],
-          ['Riz complet', '70 g cru'],
-          ['Haricots verts', '200 g'],
-          ['Huile d’olive', '1 c. à soupe'],
-        ], 'Un filet de citron sur le poisson.'),
-        [S]: meal('Yaourt nature et noix', [
-          ['Yaourt nature', '1'],
-          ['Noix', '5 cerneaux'],
-        ]),
-        [D]: meal('Omelette aux épinards et salade', [
-          ['Œufs', '2 ou 3'],
-          ['Épinards', '1 grosse poignée'],
-          ['Pain complet', '1 tranche'],
-          ['Salade verte', '1 bol'],
-        ], '', 'r-omelette'),
-      },
-      // Mardi
-      {
-        [B]: meal('Tartines complètes, œufs et avocat', [
-          ['Pain complet', '2 tranches'],
-          ['Œufs', '2'],
-          ['Avocat', '½'],
-          ['Citron', 'quelques gouttes'],
-        ]),
-        [L]: meal('Bowl poulet, quinoa et brocoli', [
-          ['Poulet', '120 g'],
-          ['Quinoa', '70 g cru'],
-          ['Brocoli', '200 g'],
-          ['Huile d’olive', '1 c. à soupe'],
-        ]),
-        [S]: meal('Fruit et amandes', [
-          ['Fruit de saison', '1'],
-          ['Amandes', '1 petite poignée'],
-        ]),
-        [D]: meal('Soupe de légumes verts et tartine de sardines', [
-          ['Courgette, poireau, épinards', '1 grand bol'],
-          ['Sardines', '1 boîte'],
-          ['Pain complet', '1 tranche'],
-        ]),
-      },
-      // Mercredi
-      {
-        [B]: meal('Yaourt, flocons d’avoine et fruits rouges', [
-          ['Yaourt nature', '1 ou 2'],
-          ['Flocons d’avoine', '30 g'],
-          ['Fruits rouges', '1 poignée'],
-        ], '', 'r-bowl'),
-        [L]: meal('Salade de lentilles, avocat et citron', [
-          ['Lentilles cuites', '150 g'],
-          ['Avocat', '½'],
-          ['Légumes croquants', '1 bol'],
-          ['Huile d’olive et citron', 'pour l’assaisonnement'],
-        ], '', 'r-lentilles'),
-        [S]: meal('Boisson gingembre-citron et noix', [
-          ['Boisson gingembre-citron', '1 tasse'],
-          ['Noix', '5 cerneaux'],
-        ], '', 'r-gingembre'),
-        [D]: meal('Maquereau, pommes de terre et salade', [
-          ['Maquereau', '1 filet'],
-          ['Pommes de terre', '2 ou 3'],
-          ['Salade verte', '1 bol'],
-        ]),
-      },
-      // Jeudi
-      {
-        [B]: meal('Overnight oats aux fruits rouges', [
-          ['Flocons d’avoine', '50 g'],
-          ['Yaourt nature', '1'],
-          ['Fruits rouges', '1 poignée'],
-        ], 'À préparer la veille au soir.', 'r-overnight'),
-        [L]: meal('Wrap complet thon, avocat et crudités', [
-          ['Galette complète', '1 ou 2'],
-          ['Thon au naturel', '1 petite boîte'],
-          ['Avocat', '½'],
-          ['Crudités', '1 poignée'],
-        ]),
-        [S]: meal('Yaourt nature et fruits rouges', [
-          ['Yaourt nature', '1'],
-          ['Fruits rouges', '1 poignée'],
-        ]),
-        [D]: meal('Poêlée de légumes verts, œufs et riz complet', [
-          ['Légumes verts', '250 g'],
-          ['Œufs', '2'],
-          ['Riz complet', '60 g cru'],
-        ]),
-      },
-      // Vendredi
-      {
-        [B]: porridge,
-        [L]: meal('Saumon au four, patate douce et brocoli', [
-          ['Saumon', '120 g'],
-          ['Patate douce', '1 moyenne'],
-          ['Brocoli', '200 g'],
-        ], '', 'r-saumon'),
-        [S]: meal('Pomme et amandes', [
-          ['Pomme', '1'],
-          ['Amandes', '1 petite poignée'],
-        ]),
-        [D]: meal('Salade pois chiches, avocat et épinards', [
-          ['Pois chiches', '150 g'],
-          ['Avocat', '½'],
-          ['Pousses d’épinards', '2 poignées'],
-          ['Huile d’olive', '1 c. à soupe'],
-        ]),
-      },
-      // Samedi
-      {
-        [B]: meal('Œufs brouillés, pain complet et fruit', [
-          ['Œufs', '2'],
-          ['Pain complet', '1 ou 2 tranches'],
-          ['Fruit', '1'],
-        ]),
-        [L]: meal('Pâtes complètes, sauce tomate et poulet', [
-          ['Pâtes complètes', '80 g crues'],
-          ['Sauce tomate maison', '1 louche'],
-          ['Poulet', '100 g'],
-        ]),
-        [S]: meal('Smoothie yaourt et fruits rouges', [
-          ['Yaourt nature', '1'],
-          ['Fruits rouges', '1 poignée'],
-          ['Flocons d’avoine', '1 c. à soupe'],
-        ]),
-        [D]: meal('Repas libre, à savourer', [], 'Un repas plaisir fait partie d’une alimentation équilibrée.'),
-      },
-      // Dimanche
-      {
-        [B]: meal('Brunch : œufs, avocat, yaourt et fruits', [
-          ['Œufs', '2'],
-          ['Avocat', '½'],
-          ['Yaourt nature', '1'],
-          ['Fruits', '1 bol'],
-        ]),
-        [L]: meal('Sardines ou truite, légumes rôtis et quinoa', [
-          ['Poisson gras', '1 portion'],
-          ['Légumes de saison rôtis', '1 plaque'],
-          ['Quinoa', '60 g cru'],
-        ]),
-        [S]: meal('Fruits et noix', [
-          ['Fruit de saison', '1'],
-          ['Noix', '5 cerneaux'],
-        ]),
-        [D]: meal('Soupe maison et tartines', [
-          ['Soupe de légumes', '1 grand bol'],
-          ['Pain complet', '1 ou 2 tranches'],
-          ['Fromage ou œuf', '1 portion'],
-        ]),
-      },
-    ],
+    program: defaultProgram(),
+    slots: programSlots(),
+    plan: programPlan(),
     foods: [
       { id: 'f-gingembre', name: 'Gingembre', emoji: '🫚', category: 'Épices et aromates', favorite: false,
         benefits: 'Apporte beaucoup de goût sans sucre ni sel ajoutés. Agréable en infusion ; certaines personnes le trouvent utile pour la digestion.',
@@ -563,9 +411,9 @@ export function defaultNutrition(): NutritionState {
           'Filtre, puis ajoute le jus du demi-citron, et le miel si tu le souhaites, quand la boisson a un peu tiédi.',
           'Version fraîche : laisse refroidir et garde au réfrigérateur jusqu’à 24 heures.',
         ],
-        notes:
-          'Une boisson chaude agréable qui participe à ton hydratation. Elle ne « détoxifie » pas l’organisme et ne fait pas maigrir : le foie et les reins s’en chargent très bien. En cas de reflux, de grossesse ou de traitement anticoagulant, demande conseil à un professionnel de santé avant d’en boire souvent.',
+        notes: LEMON_GINGER_NOTE,
       },
+      ...programRecipes(),
       {
         id: 'r-overnight',
         title: 'Overnight oats aux fruits rouges',
@@ -696,18 +544,7 @@ export function defaultNutrition(): NutritionState {
         notes: 'Se garde un jour au frais (ajoute l’avocat au dernier moment).',
       },
     ],
-    shopping: [
-      { id: 'sh-1', name: 'Flocons d’avoine', qty: '1 paquet', category: 'Épicerie', checked: false },
-      { id: 'sh-2', name: 'Fruits rouges surgelés', qty: '1 sachet', category: 'Surgelés', checked: false },
-      { id: 'sh-3', name: 'Œufs', qty: '12', category: 'Frais', checked: false },
-      { id: 'sh-4', name: 'Yaourts nature', qty: '8', category: 'Frais', checked: false },
-      { id: 'sh-5', name: 'Citrons', qty: '3', category: 'Fruits et légumes', checked: false },
-      { id: 'sh-6', name: 'Gingembre frais', qty: '1 morceau', category: 'Fruits et légumes', checked: false },
-      { id: 'sh-7', name: 'Avocats', qty: '3', category: 'Fruits et légumes', checked: false },
-      { id: 'sh-8', name: 'Épinards et brocoli', qty: '', category: 'Fruits et légumes', checked: false },
-      { id: 'sh-9', name: 'Saumon ou maquereau', qty: '2 portions', category: 'Poissons et viandes', checked: false },
-      { id: 'sh-10', name: 'Amandes et noix', qty: '1 sachet', category: 'Épicerie', checked: false },
-    ],
+    shopping: programShopping(),
     water: { goalMl: 3000, glassMl: 250, log: {} },
     mealLog: {},
     principles: [
@@ -722,8 +559,44 @@ export function defaultNutrition(): NutritionState {
 
 // ───────────────────────── Visage
 
+/** Soin du week-end : masque maison au riz, une fois par semaine. */
+export function defaultWeeklyCare(): WeeklyCare[] {
+  return [
+    {
+      id: 'wc-masque-riz',
+      title: 'Masque maison au riz (mascarilla casera)',
+      emoji: '🍚',
+      days: [5, 6],
+      durationMin: 15,
+      ingredients: [
+        { id: 'wc-1', name: 'Riz cuit très tendre (ou farine de riz)', qty: '2 c. à soupe' },
+        { id: 'wc-2', name: 'Lait ou yaourt nature', qty: '1 c. à soupe' },
+        { id: 'wc-3', name: 'Miel', qty: '1 c. à café' },
+      ],
+      steps: [
+        'Fais cuire le riz dans un peu plus d’eau que d’habitude, jusqu’à ce qu’il soit très tendre (un reste de riz nature convient).',
+        'Écrase-le à la fourchette ou mixe-le pour obtenir une pâte lisse (avec de la farine de riz, mélange simplement).',
+        'Ajoute le lait (ou le yaourt) et le miel : la texture doit s’étaler sans couler.',
+        'Laisse revenir à température ambiante avant de l’appliquer.',
+      ],
+      application: [
+        'La première fois, teste un peu de masque sur la mâchoire et attends 24 h : sans rougeur ni démangeaison, tu peux l’utiliser.',
+        'Nettoie ton visage et sèche-le en tamponnant.',
+        'Étale une couche fine avec les doigts propres, en évitant le contour des yeux et les lèvres.',
+        'Laisse poser 15 minutes, visage détendu.',
+        'Rince à l’eau tiède en massant doucement par petits cercles, puis sèche en tamponnant.',
+        'Termine par ta crème hydratante.',
+      ],
+      notes:
+        'Sensation de peau plus douce et plus nette, effet temporaire : pas d’effet « anti-rides » ni « éclaircissant » démontré. N’ajoute jamais de citron sur la peau (irritant, et il rend la peau sensible au soleil). Rougeur, brûlure ou démangeaison : rince tout de suite et arrête. Prépare-le au moment de l’utiliser, ne le conserve pas.',
+      log: {},
+    },
+  ];
+}
+
 export function defaultFace(): FaceState {
   return {
+    weekly: defaultWeeklyCare(),
     routines: [
       {
         id: 'r-morning',
@@ -885,8 +758,11 @@ export function defaultChecklist(): ChecklistItem[] {
   return [
     { id: 'cl-minoxidil', label: 'Minoxidil à mettre le matin', emoji: '💊', link: { kind: 'habit', habitId: 'h-minoxidil', owned: true } },
     { id: 'cl-creme-matin', label: 'Crème du matin', emoji: '🧴', link: { kind: 'face', stepId: 'fs-m-hydra' } },
+    { id: 'cl-visage-matin', label: 'Exercice visage du matin', emoji: '🙂', link: { kind: 'faceTraining', slot: 'matin' } },
     { id: 'cl-eau', label: '3 L d’eau à répartir dans la journée', emoji: '💧', link: { kind: 'water', parts: ['Matin', 'Après-midi', 'Soir'] } },
+    { id: 'cl-visage-soir', label: 'Exercice visage du soir', emoji: '🙂', link: { kind: 'faceTraining', slot: 'soir' } },
     { id: 'cl-creme-soir', label: 'Crème du soir visage et dos', emoji: '🧴', link: { kind: 'face', stepId: 'fs-e-hydra' } },
+    { id: 'cl-masque', label: 'Masque au riz (une fois ce week-end)', emoji: '🍚', link: { kind: 'weekly', careId: 'wc-masque-riz' } },
   ];
 }
 
@@ -897,8 +773,10 @@ export function defaultChecklist(): ChecklistItem[] {
  * Version 3 (23/11/2026) : séance « Haut du corps » = pompes basiques, gainage 1 min, pompes diamant, pompes épaules.
  * Version 4 (23/11/2026) : liste « À faire aujourd'hui » sur l'accueil (remplace le programme du jour), eau 3 L, minoxidil,
  * séance « Haut du corps » du lundi au samedi et dimanche repos.
+ * Version 5 (23/11/2026) : exercices du visage matin et soir, masque au riz du week-end, programme alimentaire
+ * (≈ 2 250 kcal, 170 g de protéines), citron-gingembre chaque jour, recettes simples.
  */
-export const DATA_VERSION = 4;
+export const DATA_VERSION = 5;
 
 export function createDefaultData(): AppData {
   return {

@@ -1,5 +1,5 @@
 import { BookOpen, Check, Eraser, Pencil, ShoppingBasket } from 'lucide-react';
-import { Button, Field, Rating, Select, Sheet, TextArea, TextInput } from '@/components/ui';
+import { Button, Field, NumberField, Rating, Select, Sheet, TextArea, TextInput } from '@/components/ui';
 import { WEEKDAYS, todayKey, weekdayOf } from '@/lib/dates';
 import { removeWithUndo, toast } from '@/lib/feedback';
 import { snapshotDay } from '@/lib/progress';
@@ -226,6 +226,9 @@ export function MealEditorSheet({
                 edit((m) => {
                   m.items = copyItems(recipe.ingredients);
                   if (!m.title.trim()) m.title = recipe.title;
+                  // Les repères d'une recette sont par portion.
+                  if (recipe.kcal) m.kcal = recipe.kcal;
+                  if (recipe.protein) m.protein = recipe.protein;
                 })
               }
             >
@@ -238,6 +241,14 @@ export function MealEditorSheet({
             )}
           </div>
         )}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Repère calories" hint="Estimation, en kcal.">
+            <NumberField value={meal?.kcal ?? 0} min={0} max={3000} step={10} onChange={(v) => edit((m) => void (m.kcal = v || undefined))} />
+          </Field>
+          <Field label="Protéines" hint="En grammes.">
+            <NumberField value={meal?.protein ?? 0} min={0} max={300} onChange={(v) => edit((m) => void (m.protein = v || undefined))} />
+          </Field>
+        </div>
         <div>
           <span className="mb-1.5 block text-[13px] font-medium text-ink-2">Aliments et quantités</span>
           <ItemsEditor items={meal?.items ?? []} apply={applyItems} />

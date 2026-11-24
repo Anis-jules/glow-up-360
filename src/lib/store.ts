@@ -58,7 +58,44 @@ export function normalizeData(input: unknown): AppData {
   if ((raw.version ?? 1) < 2) migrateToV2(out);
   if ((raw.version ?? 1) < 3) migrateToV3(out);
   if ((raw.version ?? 1) < 4) migrateToV4(out);
+  if ((raw.version ?? 1) < 5) migrateToV5(out, base);
   return out;
+}
+
+/**
+ * Version 5 : programme alimentaire (≈ 2 250 kcal, 170 g de protéines) avec un nouveau planning de la semaine,
+ * citron-gingembre chaque matin, recettes simples ajoutées (celles de l'utilisateur sont gardées), courses complétées.
+ * Liste du jour : exercices visage matin et soir, masque au riz du week-end.
+ * (Les exercices du visage, le masque et le programme eux-mêmes arrivent par les valeurs par défaut.)
+ */
+function migrateToV5(d: AppData, base: AppData) {
+  const n = d.nutrition;
+  if (!n.slots.some((s) => s.id === 's-lemon')) {
+    const lemon = base.nutrition.slots.find((s) => s.id === 's-lemon');
+    if (lemon) n.slots.unshift(lemon);
+  }
+  n.plan = base.nutrition.plan;
+  const have = new Set(n.recipes.map((r) => r.id));
+  const ginger = n.recipes.find((r) => r.id === 'r-gingembre');
+  const baseGinger = base.nutrition.recipes.find((r) => r.id === 'r-gingembre');
+  if (ginger && baseGinger) ginger.notes = baseGinger.notes;
+  const added = base.nutrition.recipes.filter((r) => !have.has(r.id));
+  const at = n.recipes.findIndex((r) => r.id === 'r-gingembre');
+  n.recipes.splice(at >= 0 ? at + 1 : 0, 0, ...added);
+  const names = new Set(n.shopping.map((i) => i.name.trim().toLowerCase()));
+  for (const item of base.nutrition.shopping) if (!names.has(item.name.trim().toLowerCase())) n.shopping.push(item);
+
+  const ids = new Set(d.checklist.map((c) => c.id));
+  const byId = (id: string) => base.checklist.find((c) => c.id === id);
+  const insertAfter = (afterId: string, id: string) => {
+    const item = byId(id);
+    if (!item || ids.has(id)) return;
+    const i = d.checklist.findIndex((c) => c.id === afterId);
+    d.checklist.splice(i >= 0 ? i + 1 : d.checklist.length, 0, item);
+  };
+  insertAfter('cl-creme-matin', 'cl-visage-matin');
+  insertAfter('cl-eau', 'cl-visage-soir');
+  insertAfter('cl-creme-soir', 'cl-masque');
 }
 
 /**
