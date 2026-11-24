@@ -60,8 +60,18 @@ export function normalizeData(input: unknown): AppData {
   if ((raw.version ?? 1) < 4) migrateToV4(out);
   if ((raw.version ?? 1) < 5) migrateToV5(out, base);
   if ((raw.version ?? 1) < 6) migrateToV6(out);
+  if ((raw.version ?? 1) < 7) migrateToV7(out);
   if (!Array.isArray(out.english?.words)) out.english = base.english;
   return out;
+}
+
+/** Version 7 : sur l'accueil, le shot gingembre-citron (case à cocher) remplace la carte « Routine visage ». */
+function migrateToV7(d: AppData) {
+  const cards = d.settings.dashboardCards.filter((c) => c.id !== 'ginger');
+  const at = cards.findIndex((c) => c.id === 'face');
+  cards.splice(at >= 0 ? at : cards.length, 0, { id: 'ginger', visible: true });
+  for (const c of cards) if (c.id === 'face') c.visible = false;
+  d.settings.dashboardCards = [...cards.filter((c) => c.visible), ...cards.filter((c) => !c.visible)];
 }
 
 /**

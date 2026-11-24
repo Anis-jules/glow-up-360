@@ -24,6 +24,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { ChecklistCard } from './ChecklistCard';
 import { DashCard } from './DashCard';
 import { EnglishCard } from './EnglishCard';
+import { GingerShotCard } from './GingerShotCard';
 import {
   BarChart,
   Button,
@@ -72,6 +73,7 @@ import { cx, moveItem } from '@/lib/utils';
 const CARD_LABELS: Record<DashboardCardId, string> = {
   checklist: 'À faire aujourd’hui',
   english: 'Mots en anglais',
+  ginger: 'Shot gingembre-citron',
   agenda: 'Programme du jour (rappels)',
   habits: 'Habitudes',
   sport: 'Sport du jour',
@@ -139,6 +141,8 @@ export default function DashboardPage() {
         return <ChecklistCard key={id} {...props} />;
       case 'english':
         return <EnglishCard key={id} {...props} />;
+      case 'ginger':
+        return <GingerShotCard key={id} {...props} />;
       case 'agenda':
         return <AgendaCard key={id} {...props} />;
       case 'habits':

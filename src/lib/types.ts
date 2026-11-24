@@ -9,7 +9,7 @@ export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type ModuleKey = 'sport' | 'nutrition' | 'face' | 'mind' | 'habits';
 export type ThemeMode = 'light' | 'dark' | 'system';
-export type DashboardCardId = 'checklist' | 'english' | 'agenda' | 'habits' | 'sport' | 'nutrition' | 'face' | 'mind' | 'week';
+export type DashboardCardId = 'checklist' | 'english' | 'ginger' | 'agenda' | 'habits' | 'sport' | 'nutrition' | 'face' | 'mind' | 'week';
 
 // ───────────────────────── Réglages
 

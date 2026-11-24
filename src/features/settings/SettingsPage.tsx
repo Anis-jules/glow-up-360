@@ -51,6 +51,7 @@ type Tab = (typeof TABS)[number];
 const CARD_LABELS: Record<DashboardCardId, string> = {
   checklist: 'À faire aujourd’hui',
   english: 'Mots en anglais',
+  ginger: 'Shot gingembre-citron',
   agenda: 'Programme du jour (rappels)',
   habits: 'Habitudes',
   sport: 'Sport du jour',

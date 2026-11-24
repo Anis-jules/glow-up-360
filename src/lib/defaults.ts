@@ -56,9 +56,10 @@ export function defaultSettings(): Settings {
       { id: 'checklist', visible: true },
       { id: 'english', visible: true },
       { id: 'sport', visible: true },
-      { id: 'face', visible: true },
+      { id: 'ginger', visible: true },
       { id: 'week', visible: true },
       // Masquées, réactivables dans Personnaliser.
+      { id: 'face', visible: false },
       { id: 'habits', visible: false },
       { id: 'nutrition', visible: false },
       { id: 'mind', visible: false },
@@ -786,8 +787,9 @@ export function defaultEnglish(): EnglishState {
  * (≈ 2 250 kcal, 170 g de protéines), citron-gingembre chaque jour, recettes simples.
  * Version 6 (24/11/2026) : onglet Anglais (mots du jour et traductions) ; accueil = mots d'anglais à la place
  * des habitudes, cartes nutrition et objectifs intellectuels masquées.
+ * Version 7 (24/11/2026) : accueil = shot gingembre-citron à cocher à la place de la routine visage.
  */
-export const DATA_VERSION = 6;
+export const DATA_VERSION = 7;
 
 export function createDefaultData(): AppData {
   return {
