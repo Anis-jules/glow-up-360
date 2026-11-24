@@ -12,6 +12,7 @@ const HabitsPage = lazy(() => import('./features/habits/HabitsPage'));
 const StatsPage = lazy(() => import('./features/stats/StatsPage'));
 const SettingsPage = lazy(() => import('./features/settings/SettingsPage'));
 const RemindersPage = lazy(() => import('./features/reminders/RemindersPage'));
+const EnglishPage = lazy(() => import('./features/english/EnglishPage'));
 
 function PageFallback() {
   return (
@@ -34,6 +35,7 @@ export function App() {
           <Route path="nutrition" element={page(<NutritionPage />)} />
           <Route path="visage" element={page(<FacePage />)} />
           <Route path="esprit" element={page(<MindPage />)} />
+          <Route path="anglais" element={page(<EnglishPage />)} />
           <Route path="habitudes" element={page(<HabitsPage />)} />
           <Route path="statistiques" element={page(<StatsPage />)} />
           <Route path="parametres" element={page(<SettingsPage />)} />

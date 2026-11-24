@@ -6,6 +6,7 @@ import { defaultProgram, LEMON_GINGER_NOTE, programPlan, programRecipes, program
 import type {
   AppData,
   ChecklistItem,
+  EnglishState,
   Exercise,
   FaceTraining,
   WeeklyCare,
@@ -53,12 +54,14 @@ export function defaultSettings(): Settings {
     jokersPerWeek: 1,
     dashboardCards: [
       { id: 'checklist', visible: true },
-      { id: 'habits', visible: true },
+      { id: 'english', visible: true },
       { id: 'sport', visible: true },
-      { id: 'nutrition', visible: true },
       { id: 'face', visible: true },
-      { id: 'mind', visible: true },
       { id: 'week', visible: true },
+      // Masquées, réactivables dans Personnaliser.
+      { id: 'habits', visible: false },
+      { id: 'nutrition', visible: false },
+      { id: 'mind', visible: false },
       // Ancien « Programme du jour » (rappels par heure) : masqué, réactivable dans Personnaliser.
       { id: 'agenda', visible: false },
     ],
@@ -719,7 +722,7 @@ export function defaultHabits(): HabitsState {
       { id: 'h-posture', title: 'Pause posture et étirements', emoji: '🧘', days: ALL, moment: 'journee', note: '', archived: false },
       { id: 'h-sport', title: 'Séance de sport', emoji: '🏋️', days: [0, 1, 2, 3, 4, 5], moment: 'soir', note: 'Ta séance du jour est dans l’onglet Sport.', archived: false },
       { id: 'h-screens', title: 'Pas d’écran 30 min avant de dormir', emoji: '📵', days: ALL, moment: 'soir', note: '', archived: false },
-      { id: 'h-english', title: 'Ajouter 5 mots en anglais avec traduction', emoji: '🇬🇧', days: ALL, moment: 'libre', note: 'Tu peux les noter dans Esprit, onglet Journal, catégorie Langues étrangères.', archived: false },
+      { id: 'h-english', title: 'Ajouter 5 mots en anglais avec traduction', emoji: '🇬🇧', days: ALL, moment: 'libre', note: 'Note-les dans l’onglet Anglais : l’habitude se coche toute seule au 5e mot.', archived: false },
       { id: 'h-plan', title: 'Préparer la semaine', emoji: '🗓️', days: [6], moment: 'libre', note: '', archived: false },
     ],
     log: {},
@@ -766,6 +769,12 @@ export function defaultChecklist(): ChecklistItem[] {
   ];
 }
 
+// ───────────────────────── Anglais
+
+export function defaultEnglish(): EnglishState {
+  return { dailyGoal: 5, words: [] };
+}
+
 // ───────────────────────── Ensemble
 
 /**
@@ -775,8 +784,10 @@ export function defaultChecklist(): ChecklistItem[] {
  * séance « Haut du corps » du lundi au samedi et dimanche repos.
  * Version 5 (23/11/2026) : exercices du visage matin et soir, masque au riz du week-end, programme alimentaire
  * (≈ 2 250 kcal, 170 g de protéines), citron-gingembre chaque jour, recettes simples.
+ * Version 6 (24/11/2026) : onglet Anglais (mots du jour et traductions) ; accueil = mots d'anglais à la place
+ * des habitudes, cartes nutrition et objectifs intellectuels masquées.
  */
-export const DATA_VERSION = 5;
+export const DATA_VERSION = 6;
 
 export function createDefaultData(): AppData {
   return {
@@ -790,6 +801,7 @@ export function createDefaultData(): AppData {
     habits: defaultHabits(),
     reminders: defaultReminders(),
     checklist: defaultChecklist(),
+    english: defaultEnglish(),
     history: {},
   };
 }

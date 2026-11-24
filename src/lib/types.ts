@@ -9,7 +9,7 @@ export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type ModuleKey = 'sport' | 'nutrition' | 'face' | 'mind' | 'habits';
 export type ThemeMode = 'light' | 'dark' | 'system';
-export type DashboardCardId = 'checklist' | 'agenda' | 'habits' | 'sport' | 'nutrition' | 'face' | 'mind' | 'week';
+export type DashboardCardId = 'checklist' | 'english' | 'agenda' | 'habits' | 'sport' | 'nutrition' | 'face' | 'mind' | 'week';
 
 // ───────────────────────── Réglages
 
@@ -446,6 +446,23 @@ export interface RemindersState {
   fired: Record<ID, string>;
 }
 
+// ───────────────────────── Anglais
+
+/** Un mot appris, avec sa traduction, rattaché au jour où il a été noté. */
+export interface EnglishWord {
+  id: ID;
+  en: string;
+  fr: string;
+  date: DateKey;
+  note: string;
+}
+
+export interface EnglishState {
+  /** Nombre de mots à noter chaque jour. */
+  dailyGoal: number;
+  words: EnglishWord[];
+}
+
 // ───────────────────────── À faire aujourd'hui (accueil)
 
 /**
@@ -491,6 +508,8 @@ export interface AppData {
   reminders: RemindersState;
   /** Liste « À faire aujourd'hui » de l'accueil. */
   checklist: ChecklistItem[];
+  /** Mots d'anglais notés chaque jour. */
+  english: EnglishState;
   /** Photographie de chaque journée (sert aux statistiques). */
   history: Record<DateKey, DaySummary>;
 }

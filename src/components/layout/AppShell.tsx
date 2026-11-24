@@ -87,6 +87,10 @@ function SaveIndicator() {
   );
 }
 
+// Barre latérale : les rubriques, puis Rappels et Paramètres après un séparateur.
+const sideMain = NAV.filter((n) => n.to !== '/parametres');
+const sideItems = [...sideMain, REMINDERS_NAV, ...NAV.filter((n) => n.to === '/parametres')];
+
 function SideNav() {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-surface/70 px-3 py-5 backdrop-blur-xl lg:flex">
@@ -94,9 +98,9 @@ function SideNav() {
         <Logo />
       </div>
       <nav className="mt-8 flex flex-col gap-0.5" aria-label="Navigation principale">
-        {[...NAV.slice(0, 7), REMINDERS_NAV, NAV[7]].map((item, i) => (
+        {sideItems.map((item, i) => (
           <div key={item.to}>
-            {i === 7 && <div className="mx-3 my-3 h-px bg-line" />}
+            {i === sideMain.length && <div className="mx-3 my-3 h-px bg-line" />}
             <NavLink
               to={item.to}
               end={item.to === '/'}

@@ -59,7 +59,24 @@ export function normalizeData(input: unknown): AppData {
   if ((raw.version ?? 1) < 3) migrateToV3(out);
   if ((raw.version ?? 1) < 4) migrateToV4(out);
   if ((raw.version ?? 1) < 5) migrateToV5(out, base);
+  if ((raw.version ?? 1) < 6) migrateToV6(out);
+  if (!Array.isArray(out.english?.words)) out.english = base.english;
   return out;
+}
+
+/**
+ * Version 6 : sur l'accueil, la carte « Mots en anglais » prend la place des habitudes ; les cartes
+ * « Objectifs nutritionnels » et « Objectifs intellectuels » sont masquées (réactivables dans Personnaliser).
+ */
+function migrateToV6(d: AppData) {
+  const cards = d.settings.dashboardCards.filter((c) => c.id !== 'english');
+  const at = cards.findIndex((c) => c.id === 'habits');
+  cards.splice(at >= 0 ? at : 1, 0, { id: 'english', visible: true });
+  for (const c of cards) if (c.id === 'habits' || c.id === 'nutrition' || c.id === 'mind') c.visible = false;
+  // Les cartes masquées passent en fin de liste.
+  d.settings.dashboardCards = [...cards.filter((c) => c.visible), ...cards.filter((c) => !c.visible)];
+  const h = d.habits.items.find((x) => x.id === 'h-english');
+  if (h && h.note.startsWith('Tu peux les noter dans Esprit')) h.note = 'Note-les dans l’onglet Anglais : l’habitude se coche toute seule au 5e mot.';
 }
 
 /**

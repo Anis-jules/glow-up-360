@@ -3,6 +3,7 @@ import {
   Bell,
   Brain,
   Dumbbell,
+  Languages,
   LayoutDashboard,
   ListChecks,
   Salad,
@@ -22,13 +23,14 @@ export interface NavItem {
   module?: ModuleKey;
 }
 
-/** Les huit onglets principaux, dans l'ordre demandé. */
+/** Les onglets principaux, dans l'ordre demandé (Anglais ajouté le 24/11). */
 export const NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', short: 'Accueil', icon: LayoutDashboard },
   { to: '/sport', label: 'Sport', short: 'Sport', icon: Dumbbell, module: 'sport' },
   { to: '/nutrition', label: 'Nutrition', short: 'Nutrition', icon: Salad, module: 'nutrition' },
   { to: '/visage', label: 'Visage & Skincare', short: 'Visage', icon: Sparkles, module: 'face' },
   { to: '/esprit', label: 'Développement intellectuel', short: 'Esprit', icon: Brain, module: 'mind' },
+  { to: '/anglais', label: 'Anglais', short: 'Anglais', icon: Languages, module: 'mind' },
   { to: '/habitudes', label: 'Habitudes', short: 'Habitudes', icon: ListChecks, module: 'habits' },
   { to: '/statistiques', label: 'Statistiques', short: 'Stats', icon: BarChart3 },
   { to: '/parametres', label: 'Paramètres', short: 'Réglages', icon: Settings },
