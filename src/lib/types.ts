@@ -455,12 +455,53 @@ export interface EnglishWord {
   fr: string;
   date: DateKey;
   note: string;
+  /** Mot ajouté depuis les suggestions business. */
+  source?: 'business';
+  theme?: string;
+}
+
+/** Élément appris (verbe irrégulier, point de conjugaison) et date d'ajout. */
+export interface LearnedItem {
+  id: string;
+  date: DateKey;
+}
+
+/** Tentative de quiz en cours (reprise possible). */
+export interface QuizRun {
+  attempt: number;
+  /** Éléments figés au début de la tentative (w:…, v:…, t:…). */
+  items: string[];
+  index: number;
+  correct: number;
+  /** Questions ratées et réponse donnée. */
+  wrong: { key: string; given: string }[];
+}
+
+export interface QuizError {
+  prompt: string;
+  answer: string;
+  given: string;
+}
+
+/** Quiz d'une semaine (clé = lundi de la semaine). */
+export interface EnglishQuiz {
+  attempts: number;
+  /** Meilleur score en pourcentage. */
+  best: number;
+  passedAt?: string;
+  current?: QuizRun | null;
+  lastErrors: QuizError[];
 }
 
 export interface EnglishState {
   /** Nombre de mots à noter chaque jour. */
   dailyGoal: number;
   words: EnglishWord[];
+  /** Verbes irréguliers ajoutés à mes révisions. */
+  verbs: LearnedItem[];
+  /** Points de conjugaison étudiés. */
+  tenses: LearnedItem[];
+  quizzes: Record<DateKey, EnglishQuiz>;
 }
 
 // ───────────────────────── À faire aujourd'hui (accueil)

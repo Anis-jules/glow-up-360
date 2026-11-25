@@ -1,0 +1,138 @@
+// Vocabulaire anglais des affaires : mot ou expression, traduction, exemple d'usage.
+
+export interface BusinessWord {
+  en: string;
+  fr: string;
+  example: string;
+  theme: string;
+}
+
+const T = {
+  meetings: 'Réunions',
+  emails: 'E-mails',
+  sales: 'Négociation et ventes',
+  finance: 'Finance',
+  projects: 'Projets',
+  hr: 'Management et RH',
+  marketing: 'Marketing',
+  phone: 'Téléphone et expressions',
+};
+
+function w(theme: string, list: [string, string, string][]): BusinessWord[] {
+  return list.map(([en, fr, example]) => ({ en, fr, example, theme }));
+}
+
+export const BUSINESS_WORDS: BusinessWord[] = [
+  ...w(T.meetings, [
+    ['agenda', 'ordre du jour', 'Let’s stick to the agenda.'],
+    ['to schedule a meeting', 'planifier une réunion', 'Can we schedule a meeting for Tuesday?'],
+    ['to postpone', 'reporter', 'We need to postpone the call to next week.'],
+    ['minutes', 'compte rendu de réunion', 'Who will take the minutes?'],
+    ['to follow up', 'faire un suivi, relancer', 'I’ll follow up with the client tomorrow.'],
+    ['action item', 'action à mener', 'Let’s review the action items.'],
+    ['to brainstorm', 'faire un remue-méninges', 'Let’s brainstorm some ideas.'],
+    ['to wrap up', 'conclure, terminer', 'Let’s wrap up the meeting.'],
+    ['stakeholder', 'partie prenante', 'We need the support of all stakeholders.'],
+    ['to touch base', 'faire un point rapide', 'Let’s touch base on Friday.'],
+    ['on the same page', 'sur la même longueur d’onde', 'Are we all on the same page?'],
+    ['to run late', 'être en retard', 'Sorry, I’m running late.'],
+  ]),
+  ...w(T.emails, [
+    ['attached', 'ci-joint', 'Please find the report attached.'],
+    ['to look forward to', 'avoir hâte de, être dans l’attente de', 'I look forward to hearing from you.'],
+    ['as per', 'conformément à, suite à', 'As per our conversation, here is the quote.'],
+    ['to reach out', 'contacter', 'Feel free to reach out if you have any questions.'],
+    ['to forward', 'transférer', 'I’ll forward you the email.'],
+    ['kind regards', 'cordialement', 'Kind regards, Anna'],
+    ['to clarify', 'clarifier', 'Could you clarify this point?'],
+    ['reminder', 'rappel', 'Just a quick reminder about the deadline.'],
+    ['to confirm', 'confirmer', 'Could you confirm your availability?'],
+    ['as soon as possible', 'dès que possible', 'Please reply as soon as possible.'],
+    ['to apologize for', 's’excuser pour', 'I apologize for the delay.'],
+    ['regarding', 'concernant', 'I’m writing regarding your order.'],
+  ]),
+  ...w(T.sales, [
+    ['deal', 'accord, affaire', 'We closed the deal yesterday.'],
+    ['to negotiate', 'négocier', 'We negotiated a better price.'],
+    ['quote', 'devis', 'Could you send us a quote?'],
+    ['discount', 'remise', 'We can offer a 10% discount.'],
+    ['to close a deal', 'conclure une vente', 'She closed three deals this month.'],
+    ['lead', 'prospect, piste commerciale', 'We generated fifty new leads.'],
+    ['customer', 'client', 'Our customers love the new feature.'],
+    ['pitch', 'présentation commerciale', 'He gave a great pitch.'],
+    ['terms and conditions', 'conditions générales', 'Please read the terms and conditions.'],
+    ['compromise', 'compromis', 'We reached a compromise.'],
+    ['to bargain', 'marchander', 'They tried to bargain on the price.'],
+    ['counteroffer', 'contre-proposition', 'They made a counteroffer.'],
+  ]),
+  ...w(T.finance, [
+    ['revenue', 'chiffre d’affaires', 'Revenue grew by 20% this year.'],
+    ['profit', 'bénéfice', 'The company made a profit.'],
+    ['invoice', 'facture', 'I’ll send you the invoice.'],
+    ['budget', 'budget', 'We are over budget.'],
+    ['cash flow', 'trésorerie', 'Cash flow is tight this month.'],
+    ['expenses', 'dépenses, frais', 'Keep your receipts for your expenses.'],
+    ['to invest', 'investir', 'We plan to invest in new tools.'],
+    ['loss', 'perte', 'The project made a loss.'],
+    ['forecast', 'prévision', 'The sales forecast looks good.'],
+    ['growth', 'croissance', 'We expect strong growth.'],
+    ['shareholder', 'actionnaire', 'The shareholders approved the plan.'],
+    ['return on investment', 'retour sur investissement', 'What is the return on investment of this campaign?'],
+  ]),
+  ...w(T.projects, [
+    ['deadline', 'date limite, échéance', 'The deadline is Friday.'],
+    ['milestone', 'étape clé, jalon', 'We reached an important milestone.'],
+    ['to deliver', 'livrer', 'We delivered the project on time.'],
+    ['workload', 'charge de travail', 'My workload is heavy this week.'],
+    ['to prioritize', 'prioriser', 'We need to prioritize these tasks.'],
+    ['on track', 'dans les temps, sur la bonne voie', 'The project is on track.'],
+    ['behind schedule', 'en retard sur le planning', 'We’re behind schedule.'],
+    ['bottleneck', 'goulot d’étranglement', 'Approval is the main bottleneck.'],
+    ['feedback', 'retour, avis', 'Thanks for your feedback.'],
+    ['to outsource', 'externaliser, sous-traiter', 'We outsource our accounting.'],
+    ['scope', 'périmètre', 'That’s out of scope.'],
+    ['to meet a deadline', 'respecter un délai', 'We managed to meet the deadline.'],
+  ]),
+  ...w(T.hr, [
+    ['to hire', 'embaucher', 'We’re hiring two developers.'],
+    ['skills', 'compétences', 'She has great communication skills.'],
+    ['team leader', 'chef d’équipe', 'He’s the team leader.'],
+    ['to delegate', 'déléguer', 'Learn to delegate tasks.'],
+    ['performance review', 'entretien d’évaluation', 'My performance review is next week.'],
+    ['salary', 'salaire', 'They offered a higher salary.'],
+    ['to resign', 'démissionner', 'He resigned last month.'],
+    ['promotion', 'promotion', 'She got a promotion.'],
+    ['job interview', 'entretien d’embauche', 'I have a job interview tomorrow.'],
+    ['to train', 'former', 'We train new employees for two weeks.'],
+    ['remote work', 'télétravail', 'We offer remote work twice a week.'],
+    ['colleague', 'collègue', 'My colleague will help you.'],
+  ]),
+  ...w(T.marketing, [
+    ['brand', 'marque', 'We want to build a strong brand.'],
+    ['target audience', 'public cible', 'Who is our target audience?'],
+    ['market share', 'part de marché', 'We gained market share.'],
+    ['campaign', 'campagne', 'The campaign starts in May.'],
+    ['competitor', 'concurrent', 'Our main competitor lowered its prices.'],
+    ['to launch', 'lancer', 'We launch the product next month.'],
+    ['survey', 'enquête, sondage', 'We ran a customer survey.'],
+    ['awareness', 'notoriété', 'The ads increased brand awareness.'],
+    ['to promote', 'promouvoir', 'We promote the offer on social media.'],
+    ['trend', 'tendance', 'This is a growing trend.'],
+    ['engagement', 'engagement, interactions', 'Engagement on our posts is up.'],
+    ['conversion rate', 'taux de conversion', 'The conversion rate doubled.'],
+  ]),
+  ...w(T.phone, [
+    ['to hold on', 'patienter (au téléphone)', 'Hold on, I’ll transfer you.'],
+    ['to call back', 'rappeler', 'Can I call you back later?'],
+    ['to get back to someone', 'revenir vers quelqu’un', 'I’ll get back to you by Monday.'],
+    ['available', 'disponible', 'Are you available on Thursday?'],
+    ['to keep someone posted', 'tenir quelqu’un informé', 'Please keep me posted.'],
+    ['to figure out', 'trouver (une solution), comprendre', 'We’ll figure it out.'],
+    ['to handle', 'gérer', 'I’ll handle this issue.'],
+    ['to set up', 'mettre en place', 'Let’s set up a call.'],
+    ['to sort out', 'régler (un problème)', 'We sorted out the problem.'],
+    ['a win-win situation', 'une situation gagnant-gagnant', 'It’s a win-win situation.'],
+    ['to think outside the box', 'sortir des sentiers battus', 'We need to think outside the box.'],
+    ['in charge of', 'responsable de', 'Who is in charge of this project?'],
+  ]),
+];

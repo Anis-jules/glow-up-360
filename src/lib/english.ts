@@ -23,14 +23,34 @@ export function syncEnglishHabit(d: AppData, key: DateKey) {
   if (key !== todayKey()) snapshotDay(d, key);
 }
 
-export function addWord(d: AppData, key: DateKey, en: string, fr: string): ID | null {
+export function addWord(
+  d: AppData,
+  key: DateKey,
+  en: string,
+  fr: string,
+  extra: { note?: string; source?: 'business'; theme?: string } = {},
+): ID | null {
   const e = en.trim();
   const f = fr.trim();
   if (!e) return null;
   const id = uid('w');
-  d.english.words.push({ id, en: e, fr: f, date: key, note: '' });
+  d.english.words.push({ id, en: e, fr: f, date: key, note: extra.note ?? '', ...(extra.source ? { source: extra.source } : {}), ...(extra.theme ? { theme: extra.theme } : {}) });
   syncEnglishHabit(d, key);
   return id;
+}
+
+/** Ajoute ou retire un verbe irrégulier de mes révisions (il entre alors dans le quiz). */
+export function toggleVerb(d: AppData, base: string, key: DateKey, on: boolean) {
+  const has = d.english.verbs.some((v) => v.id === base);
+  if (on && !has) d.english.verbs.push({ id: base, date: key });
+  if (!on && has) d.english.verbs = d.english.verbs.filter((v) => v.id !== base);
+}
+
+/** Marque un point de conjugaison comme étudié (il entre alors dans le quiz). */
+export function toggleTense(d: AppData, id: string, key: DateKey, on: boolean) {
+  const has = d.english.tenses.some((t) => t.id === id);
+  if (on && !has) d.english.tenses.push({ id, date: key });
+  if (!on && has) d.english.tenses = d.english.tenses.filter((t) => t.id !== id);
 }
 
 export function removeWord(d: AppData, id: ID) {

@@ -773,7 +773,7 @@ export function defaultChecklist(): ChecklistItem[] {
 // ───────────────────────── Anglais
 
 export function defaultEnglish(): EnglishState {
-  return { dailyGoal: 5, words: [] };
+  return { dailyGoal: 5, words: [], verbs: [], tenses: [], quizzes: {} };
 }
 
 // ───────────────────────── Ensemble

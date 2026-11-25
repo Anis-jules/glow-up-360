@@ -62,6 +62,13 @@ export function normalizeData(input: unknown): AppData {
   if ((raw.version ?? 1) < 6) migrateToV6(out);
   if ((raw.version ?? 1) < 7) migrateToV7(out);
   if (!Array.isArray(out.english?.words)) out.english = base.english;
+  out.english = {
+    ...base.english,
+    ...out.english,
+    verbs: Array.isArray(out.english.verbs) ? out.english.verbs : [],
+    tenses: Array.isArray(out.english.tenses) ? out.english.tenses : [],
+    quizzes: out.english.quizzes && typeof out.english.quizzes === 'object' ? out.english.quizzes : {},
+  };
   return out;
 }
 
